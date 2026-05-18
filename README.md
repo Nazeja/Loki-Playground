@@ -25,25 +25,6 @@
 
 > 背景图片只在浏览器本地读取，不上传、不保存到仓库。
 
-## 使用方式
-
-直接打开 `index.html`。
-
-如果部署到 GitHub Pages：
-
-1. 新建仓库 `Loki-playground`
-2. 上传本仓库内容
-3. Settings → Pages
-4. Source 选择 `Deploy from a branch`
-5. Branch 选择 `main`，Folder 选择 `/root`
-6. 访问：`https://你的用户名.github.io/Loki-playground/`
-
-## 维护方式
-
-这是纯静态网页项目。
-
-后续更新时直接替换对应 HTML 文件，然后 commit / push 即可。
-
 ## License
 
 MIT
