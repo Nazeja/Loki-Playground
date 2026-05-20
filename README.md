@@ -8,7 +8,8 @@
 
 ### 气泡调色台
 
-入口：[`index.html`](./index.html)
+入口：[`index.html`](./index.html)  
+直达链接：[气泡调色台](https://nazeja.github.io/Loki-Playground/bubble-palette/)
 
 用于预览聊天气泡/文本/引用/code/链接在不同配色下的效果。
 
