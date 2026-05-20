@@ -4,6 +4,8 @@
 
 目前主要是给自己调试、预览、试验用：不需要后端，不需要构建，打开网页就能跑。
 
+入口链接：[Loki Playground](https://nazeja.github.io/Loki-Playground/)
+
 ## 当前工具
 
 ### 气泡调色台
