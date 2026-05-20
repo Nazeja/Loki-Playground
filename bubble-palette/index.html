@@ -393,6 +393,16 @@
     .dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.08); }
     .small { color: var(--panel-muted); font-size: 12px; }
 
+    .saved-actions {
+      display: grid;
+      gap: 6px;
+    }
+    .saved-actions button {
+      padding: 7px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
     @media (max-width: 520px) {
       main { padding: 14px; }
       .stage { padding: 24px 20px; }
@@ -876,8 +886,14 @@
       list.forEach((item, index) => {
         const row = document.createElement('div');
         row.className = 'saved-item';
-        row.innerHTML = `<div class="dot" style="background:${item.bubbleBg || defaults.bubbleBg}"></div><div><strong>${item.name || '未命名方案'}</strong><div class="small">${item.pageBg} / ${item.bubbleBg} / ${item.titleText}</div></div><button class="ghost">载入</button>`;
-        row.querySelector('button').addEventListener('click', () => applyState(item));
+        row.innerHTML = `<div class="dot" style="background:${item.bubbleBg || defaults.bubbleBg}"></div><div><strong>${item.name || '未命名方案'}</strong><div class="small">${item.pageBg} / ${item.bubbleBg} / ${item.titleText}</div></div><div class="saved-actions"><button class="ghost" data-action="load">载入</button><button class="danger" data-action="delete">删除</button></div>`;
+        row.querySelector('[data-action="load"]').addEventListener('click', () => applyState(item));
+        row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+          const next = loadSaved();
+          next.splice(index, 1);
+          saveSaved(next);
+          renderSaved();
+        });
         savedList.appendChild(row);
       });
     }
@@ -886,6 +902,8 @@
       const list = loadSaved();
       const state = readState();
       state.name = paletteName.value.trim() || `方案 ${list.length + 1}`;
+      const sameIndex = list.findIndex(item => (item.name || '未命名方案') === state.name);
+      if (sameIndex >= 0) list.splice(sameIndex, 1);
       list.unshift(state);
       saveSaved(list.slice(0, 24));
       renderSaved();
