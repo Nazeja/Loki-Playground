@@ -222,7 +222,6 @@
       line-height: 1.7;
     }
     blockquote span { color: var(--quote-text); }
-
     .inline-samples {
       display: block;
       width: fit-content;
@@ -242,6 +241,13 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: .92em;
     }
+    .inline-note {
+      margin: 8px 0 0;
+      color: var(--translation-text);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
 
 
 
@@ -419,7 +425,6 @@
   <div class="app">
     <aside>
       <h1>气泡调色台</h1>
-      <p class="sub">每个调色项只对应右侧诗歌气泡里的一个明确对象。没有卡片、按钮、表单混在一起。</p>
 
       <div class="card">
         <div class="group-title">容器</div>
@@ -494,6 +499,7 @@
           <p class="inline-samples">
             这里还有 <code class="editable" data-edit="codeText">code</code>、<a class="editable" data-edit="linkText" href="javascript:void(0)">链接</a>、<strong>粗体</strong>、<em>斜体</em>，方便一起看。
           </p>
+          <p class="inline-note">点击页面内任一可调对象，也可唤出调色台。</p>
         </article>
       </section>
 
@@ -549,8 +555,31 @@
       </div>
     </div>
   </div>
-
   <script>
+    const $ = id => document.getElementById(id);
+    const pageBgPicker = $('pageBgPicker'), pageBgHex = $('pageBgHex');
+    const bgImageInput = $('bgImageInput'), bgDimValue = $('bgDimValue'), bgDimSlider = $('bgDimSlider'), clearBgImage = $('clearBgImage');
+    const bubbleBgPicker = $('bubbleBgPicker'), bubbleBgHex = $('bubbleBgHex'), bubbleOpacityValue = $('bubbleOpacityValue'), bubbleOpacitySlider = $('bubbleOpacitySlider');
+    const bubbleBorderPicker = $('bubbleBorderPicker'), bubbleBorderHex = $('bubbleBorderHex');
+    const titleTextPicker = $('titleTextPicker'), titleTextHex = $('titleTextHex');
+    const bodyTextPicker = $('bodyTextPicker'), bodyTextHex = $('bodyTextHex');
+    const translationTextPicker = $('translationTextPicker'), translationTextHex = $('translationTextHex');
+    const strongTextPicker = $('strongTextPicker'), strongTextHex = $('strongTextHex');
+    const quoteBgPicker = $('quoteBgPicker'), quoteBgHex = $('quoteBgHex');
+    const quoteBorderPicker = $('quoteBorderPicker'), quoteBorderHex = $('quoteBorderHex');
+    const quoteTextPicker = $('quoteTextPicker'), quoteTextHex = $('quoteTextHex');
+    const codeBgPicker = $('codeBgPicker'), codeBgHex = $('codeBgHex');
+    const codeTextPicker = $('codeTextPicker'), codeTextHex = $('codeTextHex');
+    const linkTextPicker = $('linkTextPicker'), linkTextHex = $('linkTextHex');
+    const paletteName = $('paletteName'), saveBtn = $('saveBtn'), copyBtn = $('copyBtn'), jsonBtn = $('jsonBtn'), resetBtn = $('resetBtn'), savedList = $('savedList');
+    const titleRatio = $('titleRatio'), bodyRatio = $('bodyRatio'), translationRatio = $('translationRatio'), exportBox = $('exportBox');
+    const quickTool = $('quickTool'), quickMenu = $('quickMenu');
+    const pickerBackdrop = $('pickerBackdrop'), pickerTitle = $('pickerTitle'), closePicker = $('closePicker'), pickerPreview = $('pickerPreview');
+    const pickerModeTitle = $('pickerModeTitle'), togglePickerMode = $('togglePickerMode'), presetGrid = $('presetGrid'), nativePickerWrap = $('nativePickerWrap');
+    const colorPlane = $('colorPlane'), hSlider = $('hSlider'), sSlider = $('sSlider'), lSlider = $('lSlider'), hValue = $('hValue'), sValue = $('sValue'), lValue = $('lValue');
+    const pickerOpacityRow = $('pickerOpacityRow'), pickerOpacitySlider = $('pickerOpacitySlider'), pickerOpacityValue = $('pickerOpacityValue');
+    const pickerHex = $('pickerHex'), cancelPicker = $('cancelPicker'), applyPicker = $('applyPicker');
+
     const defaults = {
       pageBg: '#f7f7fb',
       bubbleBg: '#7c3aed',
