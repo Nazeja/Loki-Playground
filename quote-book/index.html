@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>摘录书</title>
+  <style>
+    :root {
+      --paper: #fffaf1;
+      --paper-deep: #f4ead8;
+      --ink: #3b3441;
+      --muted: #7d7485;
+      --honey: #ffdca8;
+      --honey-deep: #f5b96b;
+      --snake: #bfeee8;
+      --snake-deep: #63bdb8;
+      --loki: #d9d2ff;
+      --loki-deep: #8d6bb8;
+      --magenta: #a12c64;
+      --shadow: 0 20px 60px rgba(65, 45, 83, .18);
+      --soft-shadow: 0 10px 28px rgba(65, 45, 83, .11);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: ui-rounded, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f7efe2;
+      background-image:
+        linear-gradient(rgba(247,239,226,.82), rgba(247,239,226,.82)),
+        url("./assets/paper-bg.webp");
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .08;
+      background-image:
+        repeating-linear-gradient(7deg, rgba(80,60,45,.028) 0 1px, transparent 1px 14px),
+        repeating-linear-gradient(96deg, rgba(80,60,45,.018) 0 1px, transparent 1px 20px);
+      background-size: 180px 180px, 240px 240px;
+      mix-blend-mode: multiply;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0) scale(.98); }
+    .library-pager:active, .library-back:active { transform: none; }
+
+    .app {
+      width: min(1120px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 22px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 14px 0;
+      backdrop-filter: blur(14px);
+    }
+
+    .cover-mode .topbar {
+      display: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    .seal {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,252,244,.72);
+      border: 1px solid rgba(110,88,62,.18);
+      box-shadow: 0 8px 20px rgba(80,60,45,.08);
+      color: #8f4f72;
+    }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .nav:empty {
+      display: none;
+    }
+
+    .nav .btn {
+      white-space: nowrap;
+      min-width: 0;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(255,252,244,.38);
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.22);
+      box-shadow: none;
+      color: rgba(59,52,65,.78);
+    }
+
+    .nav .btn.primary {
+      background: rgba(255,252,244,.42);
+      color: rgba(59,52,65,.86);
+      border-color: rgba(143,79,114,.28);
+    }
+
+    .nav .btn.honey {
+      background: rgba(255,252,244,.32);
+    }
+
+    .nav .btn:hover {
+      background: rgba(255,252,244,.62);
+    }
+
+
+    .btn {
+      padding: 9px 14px;
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255,252,244,.72);
+      box-shadow: none;
+      border: 1px solid rgba(110, 88, 62, .18);
+    }
+
+    .btn.primary {
+      color: #4b3542;
+      background: rgba(244, 224, 198, .88);
+      box-shadow: none;
+      border-color: rgba(110, 88, 62, .18);
+    }
+
+    .btn.honey {
+      background: rgba(255,252,244,.72);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; animation: rise .32s ease both; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .cover-mode .app {
+      padding-top: 0;
+    }
+
+    .cover-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px 0;
+    }
+
+    .book {
+      width: min(520px, 92vw);
+      min-height: 680px;
+      border-radius: 34px 24px 24px 34px;
+      background:
+        linear-gradient(90deg, rgba(80, 48, 71, .15), rgba(255,248,236,.12) 8%, rgba(255,248,236,.28) 92%, rgba(255,255,255,.24)),
+        linear-gradient(rgba(250,242,226,.08), rgba(250,242,226,.08)),
+        url("./assets/cover-bg.webp");
+      background-size: cover;
+      background-position: 62% center;
+      box-shadow: 0 22px 56px rgba(80,60,45,.16);
+      position: relative;
+      padding: 42px 38px;
+      overflow: hidden;
+      border: 1px solid rgba(110,88,62,.18);
+      cursor: pointer;
+      transition: transform .28s ease, box-shadow .28s ease;
+    }
+
+    .book:hover {
+      transform: translateY(-2px) rotate(.15deg);
+      box-shadow: 0 24px 70px rgba(65, 45, 83, .22);
+    }
+
+    .book::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 26px 18px 18px 26px;
+      border: 1px solid rgba(161,44,100,.22);
+      pointer-events: none;
+    }
+
+    .book::after {
+      content: "";
+      position: absolute;
+      left: 26px;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: linear-gradient(#b5969b, #d5b98f, #93b7aa);
+      opacity: .34;
+      filter: blur(.2px);
+    }
+
+    .cover-art {
+      position: absolute;
+      right: -80px;
+      bottom: -72px;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.42), transparent 62%), conic-gradient(from 120deg, rgba(180,150,110,.35), rgba(245,220,180,.45), rgba(210,190,160,.35), rgba(180,150,110,.35));
+      opacity: .42;
+    }
+
+    .book-content {
+      position: relative;
+      z-index: 2;
+      min-height: 590px;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
+      align-items: start;
+      justify-content: start;
+      text-align: left;
+      column-gap: 18px;
+      padding: 34px 34px 0 12px;
+    }
+
+    .book h1 {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei", serif;
+      font-size: clamp(2.18rem, 6.9vw, 3.72rem);
+      font-weight: 500;
+      line-height: 1.08;
+      margin: 0;
+      color: rgba(54,43,62,.80);
+      letter-spacing: .16em;
+      text-indent: 0;
+      text-shadow: 0 1px 0 rgba(255,255,255,.36), 0 10px 28px rgba(60,45,70,.10);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.8;
+      margin: 0;
+    }
+
+    .quote {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+      max-width: 280px;
+      margin: -12px 0 0;
+      padding: 4px 0 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      color: rgba(75,58,76,.58);
+      font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei", serif;
+      font-size: clamp(.76rem, 2.35vw, .92rem);
+      letter-spacing: .05em;
+      line-height: 2.05;
+      text-shadow: 0 1px 0 rgba(255,255,255,.38);
+    }
+
+    .page {
+      background:
+        linear-gradient(rgba(255,252,244,.38), rgba(250,244,233,.40)),
+        url("./assets/paper-bg.webp");
+      background-size: 720px 720px;
+      background-position: center top;
+      border: 1px solid rgba(110, 88, 62, .16);
+      border-radius: 18px;
+      box-shadow: 0 14px 42px rgba(80, 60, 45, .10);
+      backdrop-filter: none;
+      padding: clamp(18px, 4vw, 34px);
+      position: relative;
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(110,88,62,.08);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .page::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        repeating-linear-gradient(174deg, rgba(80,60,45,.03) 0 1px, transparent 1px 15px),
+        repeating-linear-gradient(86deg, rgba(80,60,45,.018) 0 1px, transparent 1px 22px);
+      background-size: 220px 220px, 260px 260px;
+      mix-blend-mode: multiply;
+    }
+
+    .page > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .page-title.compact-title {
+      margin-bottom: 16px;
+    }
+
+    h2, h3 { margin: 0; }
+    h2 { font-size: clamp(1.55rem, 3.5vw, 2.25rem); }
+    h3 { font-size: 1.15rem; }
+
+    .tools {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .tools.search-only {
+      display: block;
+      margin: 18px 0 24px;
+    }
+
+    .search-wrap {
+      width: min(860px, 100%);
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-wrap .search {
+      height: 50px;
+      border-radius: 999px;
+      border: 1px solid rgba(110,88,62,.12);
+      background: rgba(255,252,244,.82);
+      box-shadow: 0 8px 24px rgba(80,60,45,.06);
+      padding-left: 54px;
+      font-size: .96rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(59,52,65,.38);
+      font-size: 1.55rem;
+      z-index: 1;
+      line-height: 1;
+    }
+
+    .search, .field, textarea, select, .speaker-input {
+      width: 100%;
+      border: 1px solid rgba(40,40,40,.18);
+      background: rgba(255,255,255,.62);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 12px 14px;
+      outline: none;
+      box-shadow: none;
+    }
+
+    textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
+
+    .grid {
+      display: grid;
+      gap: 6px;
+    }
+
+    .toc-list {
+      display: grid;
+      gap: 2px;
+      padding: 8px 4px 4px;
+    }
+
+    .toc-item {
+      padding: 15px 10px 13px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+      border-bottom: 1px solid rgba(80, 60, 45, .08);
+    }
+
+    .toc-item:hover {
+      background: rgba(255,255,255,.38);
+      transform: translateX(2px);
+    }
+
+    .toc-line {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: baseline;
+      gap: 10px;
+      color: var(--ink);
+    }
+
+    .toc-title {
+      font-size: .98rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .toc-dots {
+      height: 1px;
+      border-bottom: 1px dotted rgba(80, 60, 45, .35);
+      transform: translateY(-2px);
+    }
+
+    .toc-count {
+      font-size: .84rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .toc-sub {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 7px;
+      padding-left: 2px;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
+    .toc-date {
+      color: rgba(59,52,65,.55);
+    }
+
+    .toc-excerpt {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+
+    .toc-tags {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .toc-tags .tag {
+      padding: 1px 6px;
+      font-size: .7rem;
+      background: rgba(255,252,244,.28);
+      color: rgba(59,52,65,.56);
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(255,255,255,.78);
+      box-shadow: var(--soft-shadow);
+      min-height: 156px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card:hover { outline: 2px solid rgba(161,44,100,.13); }
+    .card-title { font-weight: 800; font-size: 1.08rem; }
+    .meta { color: var(--muted); font-size: .88rem; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255,252,244,.34);
+      border: 1px solid rgba(80,60,45,.12);
+      color: rgba(59,52,65,.62);
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    .title-with-edit {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      color: rgba(59,52,65,.62);
+      flex: 0 0 auto;
+      padding: 0;
+    }
+
+    .icon-btn:hover {
+      color: var(--ink);
+      background: rgba(59,52,65,.06);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .page-action-btn {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(59,52,65,.66);
+      min-width: 0;
+    }
+
+    .page-action-btn:hover {
+      background: rgba(59,52,65,.06);
+      color: var(--ink);
+    }
+
+    .page-action-btn svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .reader-edit-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    #reader .page {
+      overflow: hidden;
+    }
+    #reader .page::after {
+      content: "QUOTE";
+      position: absolute;
+      right: clamp(18px, 5vw, 42px);
+      top: 18px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(3.8rem, 11vw, 7.2rem);
+      font-weight: 900;
+      letter-spacing: .04em;
+      color: rgba(80,60,45,.032);
+      opacity: 1;
+      background: none;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+    .archive-kicker {
+      font-size: .68rem;
+      letter-spacing: .22em;
+      color: rgba(59,52,65,.38);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    #reader .chat-head {
+      align-items: flex-start;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(80,60,45,.14);
+      margin-bottom: 12px;
+    }
+    #reader .title-with-edit h2 {
+      font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei", serif;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: rgba(59,52,65,.88);
+    }
+    .reader-meta-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 10px;
+      color: rgba(59,52,65,.62);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+    .reader-meta-item {
+      display: inline-grid;
+      gap: 2px;
+    }
+    .reader-meta-label {
+      font-size: .58rem;
+      letter-spacing: .16em;
+      color: rgba(59,52,65,.35);
+      text-transform: uppercase;
+    }
+    .reader-note {
+      margin-top: 12px;
+      color: rgba(59,52,65,.56);
+      font-size: .86rem;
+      line-height: 1.7;
+      max-width: 56em;
+    }
+    #reader .tags {
+      margin: 10px 0 14px;
+    }
+    #reader .messages {
+      position: relative;
+      margin: 18px 0 6px;
+      border-top: 0;
+    }
+    #reader .messages::before {
+      content: "";
+      position: absolute;
+      left: minmax(64px, 112px);
+    }
+    #reader .msg {
+      grid-template-columns: minmax(82px, 128px) 1fr;
+      gap: 18px;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(80,60,45,.09);
+    }
+    #reader .speaker {
+      position: relative;
+      padding: .2em 15px 0 0;
+      border-right: 1px solid rgba(80,60,45,.16);
+    }
+    #reader .speaker-id {
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+    #reader .speaker-id.only-name .speaker-name {
+      text-align: right;
+    }
+    #reader .speaker-name {
+      font-size: .76rem;
+      line-height: 1.25;
+      color: rgba(59,52,65,.58);
+      letter-spacing: .08em;
+    }
+    #reader .bubble {
+      font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "Microsoft YaHei", serif;
+      font-size: 1rem;
+      line-height: 1.9;
+      color: rgba(45,39,50,.88);
+      text-align: justify;
+    }
+    .reader-footer-mark {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 9px;
+      margin-top: 24px;
+      color: rgba(59,52,65,.30);
+      font-size: .62rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .reader-footer-mark::after {
+      content: "■";
+      font-size: .46rem;
+    }
+
+    .backup-layout {
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) 1fr;
+      gap: 22px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .backup-actions {
+      display: grid;
+      gap: 10px;
+      justify-items: start;
+    }
+
+    .paper-link-btn {
+      min-width: 180px;
+      text-align: left;
+      border-radius: 8px;
+      background: rgba(255,252,244,.38);
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.22);
+      box-shadow: none;
+      color: rgba(59,52,65,.82);
+      padding: 9px 11px;
+    }
+
+    .paper-link-btn:hover {
+      background: rgba(255,252,244,.62);
+    }
+
+    .backup-note {
+      color: rgba(59,52,65,.66);
+      line-height: 1.75;
+      font-size: .96rem;
+      padding-top: 4px;
+    }
+
+    .editor-titlebar {
+      display: grid;
+      grid-template-columns: 40px 1fr 40px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .editor-titlebar h2 {
+      text-align: center;
+    }
+
+    .back-icon-btn {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: rgba(59,52,65,.66);
+      padding: 0;
+      box-shadow: none;
+      justify-self: start;
+    }
+
+    .back-icon-btn:hover {
+      color: var(--ink);
+      background: rgba(59,52,65,.06);
+    }
+
+    .back-icon-btn svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+
+    .chat-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .chat-head .row .btn {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .messages {
+      display: grid;
+      gap: 0;
+      margin: 20px 0 6px;
+      border-top: 1px solid rgba(80,60,45,.12);
+    }
+
+    .msg {
+      display: grid;
+      grid-template-columns: minmax(64px, 112px) 1fr;
+      gap: 14px;
+      max-width: none;
+      padding: 15px 2px;
+      border-bottom: 1px solid rgba(80,60,45,.1);
+    }
+
+    .msg.speaker-a,
+    .msg.speaker-b,
+    .msg.speaker-c,
+    .msg.speaker-d {
+      align-self: stretch;
+      justify-items: stretch;
+    }
+
+    .speaker {
+      font-size: .78rem;
+      color: rgba(59,52,65,.58);
+      padding: .35em 0 0;
+      letter-spacing: .04em;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .bubble {
+      white-space: pre-wrap;
+      line-height: 1.78;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      border: 0;
+      background: transparent !important;
+      color: var(--ink);
+      font-size: .96rem;
+    }
+
+    .speaker-a .speaker { color: rgba(121, 77, 42, .72); }
+    .speaker-b .speaker { color: rgba(75, 78, 135, .72); }
+    .speaker-c .speaker { color: rgba(65, 110, 92, .72); }
+    .speaker-d .speaker { color: rgba(130, 70, 105, .72); }
+
+    /* 阅读页采用摘录段落样式，不再使用聊天气泡背景。 */
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .optional-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: -2px 0 14px;
+    }
+
+    .check {
+      display: inline-flex;
+      width: auto;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255,255,255,.46);
+      border: 1px solid rgba(125,116,133,.18);
+      font-size: .9rem;
+    }
+
+    .check input {
+      accent-color: #3b3441;
+    }
+
+    .optional-fields:empty {
+      display: none;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    label span { padding-left: 4px; }
+
+    .composer {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.42);
+      border: 1px dashed rgba(125,116,133,.28);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mini-action {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      min-width: 0;
+    }
+
+    .mini-action svg {
+      width: 17px;
+      height: 17px;
+      display: block;
+    }
+
+    .inline-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .inline-icon svg {
+      width: 17px;
+      height: 17px;
+      display: block;
+    }
+
+    .danger svg { color: #9a4540; }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+      max-height: 380px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .mini-msg {
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      gap: 8px;
+      align-items: start;
+      padding: 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.55);
+    }
+
+    .danger { color: #a33; }
+    .muted { color: var(--muted); }
+
+    .editor-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin: -8px 0 18px;
+    }
+    .editor-tab {
+      padding: 5px 4px;
+      border: 0;
+      border-bottom: 1px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(59,52,65,.50);
+      font-size: .92rem;
+    }
+    .editor-tab.active {
+      color: rgba(59,52,65,.86);
+      border-bottom-color: rgba(80,60,45,.30);
+    }
+    .editor-panel.hidden { display: none !important; }
+
+    #editor .editor-save-row {
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .hidden { display: none !important; }
+
+    .empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--muted);
+      border: 1px dashed rgba(125,116,133,.28);
+      border-radius: 22px;
+      background: rgba(255,255,255,.35);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 12px 18px;
+      color: white;
+      background: rgba(59,52,65,.9);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      transition: .25s ease;
+      z-index: 99;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .footer-note {
+      display: none;
+    }
+
+
+
+    .library-pager { position: absolute; right: 10px; bottom: -32px; min-width: 0; height: auto; padding: 0; border-radius: 0; background: transparent; border: 0; color: rgba(59,52,65,.58); font-size: .82rem; box-shadow: none; z-index: 2; display: inline-flex; align-items: center; gap: 4px; }
+    .library-back { position: absolute; left: 10px; bottom: -32px; padding: 0; border: 0; background: transparent; color: rgba(59,52,65,.58); font-size: .82rem; box-shadow: none; display: inline-flex; align-items: center; gap: 4px; }
+    .library-pager svg, .library-back svg { width: 15px; height: 15px; }
+    .library-pager:hover, .library-back:hover { background: transparent; color: rgba(59,52,65,.58); text-decoration: none; }
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 16px;
+      padding: 8px 4px 46px;
+    }
+    .role-card {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 4px;
+      min-height: 132px;
+      padding: 14px 10px 10px;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      color: rgba(59,52,65,.82);
+      box-shadow: none;
+    }
+    .role-card:hover {
+      background: rgba(255,252,244,.18);
+      transform: translateY(-1px);
+      box-shadow: none;
+    }
+    .role-avatar, .reader-avatar { overflow: hidden; background: rgba(255,252,244,.6); border: 1px solid rgba(80,60,45,.14); color: rgba(59,52,65,.56); display: grid; place-items: center; flex: 0 0 auto; }
+    .role-avatar {
+      width: 78px;
+      height: 78px;
+      border-radius: 20px;
+      font-size: 1.45rem;
+      background:
+        radial-gradient(circle at 30% 22%, rgba(255,255,255,.55), transparent 42%),
+        linear-gradient(135deg, rgba(255,220,168,.38), rgba(191,238,232,.28));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 8px 18px rgba(80,60,45,.07);
+    }
+    .reader-avatar { width: 38px; height: 38px; border-radius: 11px; font-size: .92rem; }
+    .role-avatar img, .reader-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .role-name { font-weight: 800; font-size: 1rem; max-width: 100%; overflow-wrap: anywhere; line-height: 1.16; margin-top: 2px; }
+    .role-count { color: rgba(59,52,65,.48); font-size: .75rem; padding: 0; border-radius: 0; background: transparent; border: 0; line-height: 1.1; }
+    .identity-panel { display: grid; gap: 10px; margin: 2px 0 18px; }
+    .owner-card, .team-card {
+      border: 1px solid rgba(80,60,45,.12);
+      background: rgba(255,252,244,.42);
+      box-shadow: 0 8px 24px rgba(80,60,45,.055);
+    }
+    .owner-card {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 11px 14px;
+      border-radius: 20px 20px 14px 14px;
+      background:
+        linear-gradient(135deg, rgba(255,220,168,.30), rgba(191,238,232,.18)),
+        rgba(255,252,244,.48);
+    }
+    .owner-badge, .person-badge {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 0;
+      min-width: 0;
+      line-height: 1;
+      color: rgba(59,52,65,.52);
+      background: rgba(255,255,255,.48);
+      border: 1px solid rgba(80,60,45,.13);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.32);
+      flex: 0 0 auto;
+    }
+    .owner-badge { width: 72px; height: 72px; border-radius: 20px; font-size: 1.35rem; }
+    .person-badge { width: 32px; height: 32px; border-radius: 11px; font-size: .82rem; }
+    .owner-badge img, .person-badge img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .owner-main { min-width: 0; }
+    .owner-label-row, .team-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+    .owner-label-row span:first-child, .team-title-row span:first-child {
+      letter-spacing: .08em;
+      font-size: .74rem;
+      text-transform: uppercase;
+      color: rgba(59,52,65,.48);
+    }
+    .team-card {
+      padding: 12px 2px 10px;
+      border: 0;
+      border-top: 1px solid rgba(80,60,45,.10);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .team-title-row { margin-bottom: 10px; padding: 0 2px; }
+    .owner-field-wrap, .input-with-actions, .person-input-wrap, .speaker-combo { position: relative; }
+    .input-with-actions .field { padding: 7px 34px 7px 2px; min-height: 34px; }
+    .identity-panel .field {
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.18);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .identity-panel .field:focus {
+      border-bottom-color: rgba(161,44,100,.34);
+      background: rgba(255,255,255,.16);
+    }
+    .field-icon-btn, .label-icon-btn, .person-icon-btn { display: inline-grid; place-items: center; padding: 0; background: transparent; border: 0; box-shadow: none; color: rgba(59,52,65,.62); }
+    .field-icon-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; }
+    .field-icon-btn:hover, .field-icon-btn:active { transform: translateY(-50%); }
+    .label-icon-btn { width: 28px; height: 28px; border-radius: 9px; vertical-align: middle; margin-left: 4px; }
+    .label-icon-btn:hover, .person-icon-btn:hover { background: rgba(80,60,45,.06); }
+    .person-icon-btn { width: 30px; height: 30px; border-radius: 10px; flex: 0 0 auto; }
+    .field-icon-btn svg, .label-icon-btn svg, .person-icon-btn svg { width: 14px; height: 14px; display: block; opacity: .68; }
+    .people-editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+    .person-row {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 2px;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.10);
+    }
+    .person-input-wrap .field { padding: 7px 2px; min-height: 32px; border-radius: 0; background: transparent; }
+    #editor .form-grid .field,
+    #editor .optional-fields .field,
+    #editor .speaker-input {
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.18);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 8px 2px;
+      min-height: 34px;
+    }
+    #editor textarea {
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.16);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 8px 2px;
+      min-height: 96px;
+    }
+    #editor .form-grid .field:focus,
+    #editor .optional-fields .field:focus,
+    #editor .speaker-input:focus,
+    #editor textarea:focus {
+      border-bottom-color: rgba(161,44,100,.34);
+      background: rgba(255,255,255,.14);
+    }
+    #editor .composer {
+      margin-top: 16px;
+      padding: 14px 2px 10px;
+      border: 0;
+      border-top: 1px solid rgba(80,60,45,.10);
+      border-radius: 0;
+      background: transparent;
+    }
+    #editor .composer h3 {
+      color: rgba(59,52,65,.68);
+      font-size: 1rem;
+      letter-spacing: .04em;
+    }
+    #editor .composer .btn,
+    #editor .row .btn {
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.22);
+      padding: 6px 8px;
+      box-shadow: none;
+      color: rgba(59,52,65,.78);
+    }
+    #editor .composer .btn:hover,
+    #editor .row .btn:hover {
+      background: rgba(255,255,255,.18);
+    }
+    #editor .mini-list {
+      max-height: none;
+      padding-right: 0;
+    }
+    #editor .mini-msg {
+      grid-template-columns: minmax(78px, 116px) minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 13px 2px;
+      border-radius: 0;
+      background: transparent;
+      border-bottom: 1px solid rgba(80,60,45,.10);
+      align-items: start;
+    }
+    #editor .mini-msg .speaker-combo {
+      min-width: 0;
+    }
+    #editor .mini-msg textarea {
+      min-height: 34px;
+      height: auto;
+      overflow: hidden;
+      resize: none;
+      line-height: 1.55;
+      padding-top: 3px;
+      padding-bottom: 5px;
+    }
+    #editor .msg-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 28px);
+      gap: 6px;
+      justify-content: end;
+      align-items: start;
+      padding-top: 1px;
+    }
+    #editor .mini-action {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.18);
+      border-radius: 0;
+      padding: 0;
+    }
+    #editor .optional-row {
+      margin: 2px 0 10px;
+    }
+    #editor .check {
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      padding: 5px 6px;
+    }
+    .speaker-combo .speaker-input { padding-right: 42px; }
+    .speaker-combo .field-icon-btn { right: 7px; }
+    .select-pop { position: absolute; right: 0; top: calc(100% + 6px); min-width: min(260px, 100%); max-height: 220px; overflow: auto; z-index: 30; padding: 6px; border-radius: 12px; background: rgba(255,252,244,.96); border: 1px solid rgba(80,60,45,.16); box-shadow: 0 12px 32px rgba(80,60,45,.14); }
+    .select-pop button { width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px; background: transparent; color: rgba(59,52,65,.82); }
+    .select-pop button:hover { background: rgba(80,60,45,.06); }
+    .speaker-select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, rgba(59,52,65,.55) 50%), linear-gradient(135deg, rgba(59,52,65,.55) 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 32px; }
+    .speaker-id { display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; }
+    .speaker-id.only-name { display: block; }
+    .speaker-id.only-name .speaker-name { text-align: right; }
+    .speaker-name { font-size: .78rem; line-height: 1.15; color: inherit; letter-spacing: .04em; overflow-wrap: anywhere; }
+
+    @media (max-width: 720px) {
+      .app { width: min(100vw - 18px, 1120px); padding-top: 10px; }
+      .topbar { align-items: flex-start; flex-direction: column; gap: 10px; padding: 10px 0; position: relative; }
+      .brand .meta { display: none; }
+      .nav {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .nav .btn { width: 100%; min-width: 0; padding: 10px 8px; }
+      .backup-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .paper-link-btn { min-width: 0; width: 100%; }
+      .backup-note { font-size: .9rem; padding-top: 0; }
+      .tools { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .mini-msg { grid-template-columns: 1fr; }
+      #editor .mini-msg {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px 10px;
+        padding: 10px;
+        border: 1px solid rgba(80,60,45,.14);
+        border-radius: 10px;
+        background: rgba(255,255,255,.08);
+        align-items: start;
+      }
+      #editor .mini-msg .speaker-combo {
+        grid-column: 1;
+        grid-row: 1;
+        width: min(180px, 100%);
+        align-self: end;
+      }
+      #editor .mini-msg textarea {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        min-height: 38px;
+      }
+      #editor .msg-actions {
+        grid-column: 2;
+        grid-row: 1;
+        display: grid;
+        grid-template-columns: repeat(3, 28px);
+        gap: 4px;
+        justify-content: end;
+        align-self: end;
+        padding-top: 0;
+      }
+      #editor .speaker-combo .speaker-input { padding-right: 30px; }
+      #editor .speaker-combo .field-icon-btn { right: 0; }
+      .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-bottom: 42px; }
+      .role-card { min-height: 124px; padding: 12px 6px 8px; border-radius: 0; }
+      .role-avatar { width: 64px; height: 64px; border-radius: 17px; }
+      .speaker-id { justify-content: flex-start; }
+      .speaker-id.only-name .speaker-name { text-align: left; }
+      .msg {
+        max-width: 100%;
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 13px 0;
+      }
+      .speaker { text-align: left; padding: 0; font-size: .76rem; }
+      .bubble { font-size: .94rem; line-height: 1.72; }
+      .page { padding: 16px; border-radius: 20px; background-size: 560px 560px; }
+      .page-title, .chat-head { flex-direction: column; align-items: stretch; }
+      .chat-head .row { width: auto; justify-content: flex-start; }
+      #reader .chat-head { padding-bottom: 14px; }
+      .reader-meta-grid { gap: 8px 12px; font-size: .74rem; }
+      #reader .msg {
+        grid-template-columns: 1fr;
+        gap: 7px;
+        padding: 15px 0;
+      }
+      #reader .speaker {
+        border-right: 0;
+        padding: 0;
+        text-align: left;
+      }
+      #reader .speaker-id { justify-content: flex-start; }
+      #reader .speaker-id.only-name .speaker-name { text-align: left; }
+      #reader .bubble {
+        font-size: .96rem;
+        line-height: 1.82;
+        text-align: left;
+      }
+      .reader-footer-mark { justify-content: flex-start; margin-top: 18px; }
+      .page-title .row { width: 100%; }
+      .chat-head .btn { flex: 0 0 auto; min-width: 0; width: auto; padding: 8px 13px; font-size: .92rem; }
+      .page-title .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; }
+      .book { min-height: 560px; padding: 24px 18px; }
+      .book-content { min-height: 500px; grid-template-columns: 58px minmax(0, 1fr); column-gap: 12px; padding: 30px 14px 0 6px; }
+      .book h1 { font-size: clamp(1.92rem, 9.1vw, 2.76rem); letter-spacing: .10em; }
+      .quote { max-width: 200px; margin-top: -8px; font-size: .72rem; line-height: 1.86; letter-spacing: .025em; }
+      .subtitle { line-height: 1.55; }
+
+      #editor .editor-save-row {
+        position: sticky;
+        bottom: 8px;
+        z-index: 25;
+        margin: 14px -2px 0;
+        padding: 6px 2px;
+        justify-content: flex-end;
+        background: rgba(247,239,226,.38);
+        backdrop-filter: blur(4px);
+      }
+      #editor .editor-save-row .btn {
+        background: transparent;
+      }
+      #editor .editor-save-row .btn.primary {
+        background: transparent;
+        border-bottom-color: rgba(143,79,114,.32);
+        font-weight: 700;
+      }
+    }
+  </style>
+</head>
+<body class="cover-mode">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand" onclick="showView('cover')" role="button" aria-label="回到封面">
+        <div class="seal">✦</div>
+        <div>
+          <div>摘录书</div>
+          <div class="meta">private quote archive</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button id="navNewBtn" class="btn primary" onclick="newRecord()">新增摘录</button>
+        <button id="navBackupBtn" class="btn honey" onclick="showView('backup')">备份/导入</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="cover" class="view active">
+        <div class="cover-wrap">
+          <div class="book" onclick="showView('library')" role="button" aria-label="翻开摘录书，进入目录">
+            <div class="cover-art"></div>
+            <div class="book-content">
+              <h1>摘录书</h1>
+              <div class="quote" id="coverQuote">“你想叫，我就得应。”</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="library" class="view">
+        <div class="page">
+          <div class="page-title compact-title">
+            <div>
+              <h2 id="libraryTitle">目录</h2>
+            </div>
+          </div>
+          <div class="tools search-only">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input id="searchInput" class="search" placeholder="搜索摘录" oninput="renderLibrary()" />
+            </div>
+          </div>
+          <div id="recordGrid" class="grid"></div>
+          <button id="libraryBack" class="library-back hidden" onclick="backToRolePage()" title="返回角色页" aria-label="返回角色页"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6-6 6 6 6"/><path d="M3 12h14"/><path d="M21 19V5"/></svg><span>角色页</span></button>
+          <button id="libraryPager" class="library-pager hidden" onclick="toggleLibraryPage()" title="切换目录页" aria-label="切换目录页">1/2</button>
+        </div>
+      </section>
+
+      <section id="reader" class="view">
+        <div class="page">
+          <div class="chat-head">
+            <div>
+              <div class="archive-kicker">QUOTE ARCHIVE</div>
+              <div class="title-with-edit">
+                <h2 id="readerTitle"></h2>
+              </div>
+              <div class="meta" id="readerMeta"></div>
+            </div>
+            <div class="row">
+              <button class="page-action-btn" onclick="showView('library')" title="回目录" aria-label="回目录">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /><path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /><path d="M3 6l0 13" /><path d="M12 6l0 13" /><path d="M21 6l0 13" /></svg>
+              </button>
+              <button class="page-action-btn reader-edit-btn" onclick="editCurrent()" title="编辑" aria-label="编辑">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
+              </button>
+              <button id="readerExportBtn" class="page-action-btn" onclick="exportCurrentMarkdown()" title="导出摘要" aria-label="导出摘要">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19 22.5a4.75 4.75 0 0 1 3.5 -3.5a4.75 4.75 0 0 1 -3.5 -3.5a4.75 4.75 0 0 1 -3.5 3.5a4.75 4.75 0 0 1 3.5 3.5" /><path d="M11.5 19h-6.5a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v5" /><path d="M3 7l9 6l9 -6" /></svg>
+              </button>
+            </div>
+          </div>
+          <div class="tags" id="readerTags"></div>
+          <div class="messages" id="readerMessages"></div>
+        </div>
+      </section>
+
+      <section id="editor" class="view">
+        <div class="page">
+          <div class="editor-titlebar">
+            <button class="back-icon-btn" onclick="cancelEdit()" title="返回" aria-label="返回">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L12.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M4.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L6.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" /></svg>
+            </button>
+            <h2 id="editorHeading">新增摘录</h2>
+            <span></span>
+          </div>
+
+          <div class="editor-tabs" role="tablist">
+            <button id="editorTabMain" class="editor-tab active" type="button" onclick="switchEditorPanel('main')">编辑</button>
+            <button id="editorTabImport" class="editor-tab" type="button" onclick="switchEditorPanel('import')">导入</button>
+          </div>
+
+          <input id="avatarFile" class="hidden" type="file" accept="image/*" onchange="handleAvatarFile(event)" />
+
+          <div id="editorMainPanel" class="editor-panel">
+            <div class="identity-panel">
+              <div class="owner-card">
+                <button id="ownerAvatarBtn" class="owner-badge" type="button" onclick="chooseAvatarFor('owner')" title="上传归属头像" aria-label="上传归属头像">主</button>
+                <label class="owner-main owner-field-wrap">
+                  <div class="owner-label-row"><span>摘录归属</span></div>
+                  <div class="input-with-actions">
+                    <input id="ownerField" class="field" placeholder="这条摘录归属于谁" oninput="updateOwner(this.value)" />
+                    <button class="field-icon-btn" type="button" onclick="toggleOwnerMenu()" title="从发言人中选择" aria-label="从发言人中选择"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M0.16 4.0802 15.84 4.08l-7.8401 7.84L0.16 4.0802Z" clip-rule="evenodd"></path></svg></button>
+                    <div id="ownerMenu" class="select-pop hidden"></div>
+                  </div>
+                </label>
+              </div>
+              <div class="team-card people-block">
+                <div class="team-title-row">
+                  <span>发言人</span>
+                  <button class="label-icon-btn" type="button" onclick="addPerson()" title="增加发言人" aria-label="增加发言人">＋</button>
+                </div>
+                <div id="peopleEditor" class="people-editor"></div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label class="full">
+                <span>标题</span>
+                <input id="titleField" class="field" placeholder="给这一页起个名字" />
+              </label>
+            </div>
+            <div class="optional-row">
+              <label class="check"><input type="checkbox" id="useDate" onchange="toggleOptionalFields()"> 日期</label>
+              <label class="check"><input type="checkbox" id="useTags" onchange="toggleOptionalFields()"> 标签</label>
+              <label class="check"><input type="checkbox" id="useNote" onchange="toggleOptionalFields()"> 备注</label>
+            </div>
+            <div class="form-grid optional-fields">
+              <label id="dateWrap" class="hidden"><span>日期</span><input id="dateField" class="field" type="text" placeholder="例如：2026-05-26" /></label>
+              <label id="tagsWrap" class="hidden"><span>标签</span><input id="tagsField" class="field" placeholder="用逗号分隔" /></label>
+              <label id="noteWrap" class="full hidden"><span>备注</span><input id="noteField" class="field" placeholder="可选" /></label>
+            </div>
+
+            <div id="editorMessagesPanel" class="editor-panel">
+              <div class="composer">
+                <div class="row" style="justify-content:space-between">
+                  <h3>发言列表</h3>
+                  <button class="btn inline-icon" onclick="addMessage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                    加一句
+                  </button>
+                </div>
+                <div id="messageEditor" class="mini-list"></div>
+              </div>
+              <div class="row editor-save-row">
+                <button class="btn danger" onclick="deleteEditingRecord()" id="deleteBtn">删除</button>
+                <button class="btn primary" onclick="saveRecord()">保存</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="editorImportPanel" class="editor-panel hidden">
+            <div class="composer">
+              <h3>粘贴记录</h3>
+              <textarea id="pasteBox" placeholder="例如：&#10;A：今天也要记下来。&#10;B：好。"></textarea>
+              <div class="row">
+                <button class="btn honey" onclick="parsePastedText()">解析</button>
+                <button class="btn" onclick="document.getElementById('pasteBox').value=''">清空</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="backup" class="view">
+        <div class="page">
+          <div class="editor-titlebar">
+            <button class="back-icon-btn" onclick="showView('library')" title="返回目录" aria-label="返回目录">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L12.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M4.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L6.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" /></svg>
+            </button>
+            <h2>备份</h2>
+            <span></span>
+          </div>
+          <div class="backup-layout">
+            <div class="backup-actions">
+              <button class="btn paper-link-btn" onclick="exportJSON()">导出 JSON 备份</button>
+              <button class="btn paper-link-btn" onclick="exportAllMarkdown()">导出全部 Markdown</button>
+              <button class="btn paper-link-btn" onclick="document.getElementById('importFile').click()">导入 JSON 摘录</button>
+              <input id="importFile" class="hidden" type="file" accept="application/json,.json" onchange="importJSON(event)" />
+            </div>
+            <div class="backup-note">JSON 适合保存完整数据；Markdown 适合阅读、分享，或粘贴给其他地方继续整理。</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <p class="footer-note">本页是纯前端小玩具。你的记录只保存在这个浏览器的 localStorage 里，除非你主动导出。</p>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'quote_book_records_v1';
+    const legacyAliases = {
+      '我': '我', '你': '你', 'assistant': 'Assistant', 'user': 'User'
+    };
+
+    let records = loadRecords().map(migrateOne);
+    let currentId = null;
+    let editingId = null;
+    let editingMessages = [];
+    let editingPeople = [];
+    let editingOwner = "";
+    let editingAvatars = {};
+    let avatarTarget = null;
+    let editorDirty = false;
+    let libraryMode = "roles";
+    let selectedRole = "";
+
+    function uid() {
+      return 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function loadRecords() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return [
+        {
+          id: uid(),
+          title: '示例摘录',
+          owner: 'A',
+          date: '',
+          tags: [],
+          note: '',
+          people: ['A', 'B'],
+          avatars: {},
+          messages: [
+            { speaker: 'A', content: '今天也要记下来。' },
+            { speaker: 'B', content: '好。' }
+          ]
+        }
+      ];
+    }
+
+    function persist() {
+      records = records.map(migrateOne);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      refreshCoverQuote();
+    }
+
+    function showView(id) {
+      document.body.classList.toggle('cover-mode', id === 'cover');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'library') renderLibrary();
+      updateNav(id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateNav(id) {
+      const newBtn = document.getElementById('navNewBtn');
+      const backupBtn = document.getElementById('navBackupBtn');
+      if (!newBtn || !backupBtn) return;
+      newBtn.classList.toggle('hidden', id === 'editor');
+      backupBtn.classList.toggle('hidden', id === 'backup');
+    }
+
+    function normalizeSpeaker(name) {
+      const trimmed = (name || '').trim();
+      return legacyAliases[trimmed] || trimmed || '旁白';
+    }
+
+    function uniqueNames(list) {
+      const out = [];
+      const seen = new Set();
+      for (const item of list || []) {
+        const raw = String(item ?? '').trim();
+        if (!raw) continue;
+        const name = normalizeSpeaker(raw);
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        out.push(name);
+      }
+      return out;
+    }
+
+    function migrateOne(record = {}) {
+      const messages = (record.messages || []).map(m => ({ speaker: normalizeSpeaker(m.speaker), content: m.content || '' })).filter(m => m.speaker || m.content);
+      const sourcePeople = Array.isArray(record.people) && record.people.length ? record.people : messages.map(m => m.speaker);
+      const people = uniqueNames(sourcePeople);
+      const owner = normalizeSpeaker(record.owner || people[0] || '未命名');
+      return {
+        id: record.id || uid(),
+        title: record.title || '未命名摘录',
+        owner,
+        date: record.date || '',
+        tags: Array.isArray(record.tags) ? record.tags : [],
+        note: record.note || '',
+        people: people.length ? people : uniqueNames([owner]),
+        avatars: record.avatars && typeof record.avatars === 'object' ? record.avatars : {},
+        messages
+      };
+    }
+
+    function getOwners() {
+      return uniqueNames(records.map(r => r.owner));
+    }
+
+    function getRecordPeople(record) {
+      const people = uniqueNames([...(record?.people || []), ...((record?.messages || []).map(m => m.speaker))]);
+      return people.length ? people : uniqueNames([record?.owner]);
+    }
+
+    function getAvatar(name, record) {
+      const n = normalizeSpeaker(name);
+      return (record?.avatars && record.avatars[n]) || '';
+    }
+
+    function avatarHTML(name, record, cls = 'reader-avatar') {
+      const n = normalizeSpeaker(name);
+      const avatar = getAvatar(n, record);
+      if (avatar) return `<span class="${cls}"><img src="${escapeAttr(avatar)}" alt="${escapeAttr(n)}" /></span>`;
+      return `<span class="${cls}">${escapeHTML(n.slice(0, 1) || '?')}</span>`;
+    }
+    function findAvatarByName(name, excludeId = '') {
+      const n = normalizeSpeaker(name);
+      if (!n) return '';
+      if (editingAvatars && editingAvatars[n]) return editingAvatars[n];
+      for (const r of records) {
+        if (excludeId && r.id === excludeId) continue;
+        const avatar = getAvatar(n, r);
+        if (avatar) return avatar;
+      }
+      return '';
+    }
+    function collectAvatarsForRecord(owner, people, messages, old = null) {
+      const avatars = { ...(old?.avatars || {}), ...(editingAvatars || {}) };
+      const names = uniqueNames([owner, ...(people || []), ...((messages || []).map(m => m.speaker))]);
+      names.forEach(name => {
+        const n = normalizeSpeaker(name);
+        if (!n || avatars[n]) return;
+        const avatar = findAvatarByName(n, old?.id || '');
+        if (avatar) avatars[n] = avatar;
+      });
+      return avatars;
+    }
+    function avatarButtonContent(name, fallback = '?') {
+      const n = normalizeSpeaker(name);
+      const avatar = findAvatarByName(n);
+      if (avatar) return `<img src="${escapeAttr(avatar)}" alt="${escapeAttr(n)}" />`;
+      return escapeHTML((n || fallback).slice(0, 1) || fallback);
+    }
+    function refreshOwnerAvatar() {
+      const btn = document.getElementById('ownerAvatarBtn');
+      if (!btn) return;
+      btn.innerHTML = avatarButtonContent(document.getElementById('ownerField')?.value || editingOwner, '主');
+    }
+
+    function speakerClass(name) {
+      const record = records.find(r => r.id === currentId);
+      const speakers = getRecordPeople(record || { messages: [] });
+      const n = normalizeSpeaker(name);
+      const index = Math.max(0, speakers.indexOf(n));
+      return ['speaker-a', 'speaker-b', 'speaker-c', 'speaker-d'][index % 4] || 'speaker-a';
+    }
+
+    function closeSelectPops(except = null) {
+      document.querySelectorAll('.select-pop').forEach(menu => {
+        if (menu !== except) menu.classList.add('hidden');
+      });
+    }
+    function leftFromLineIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6-6 6 6 6"/><path d="M3 12h14"/><path d="M21 19V5"/></svg>';
+    }
+    function rightFromLineIcon() {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5v14"/><path d="M21 12H7"/><path d="m15 18 6-6-6-6"/></svg>';
+    }
+    function renderLibrary() {
+      const grid = document.getElementById('recordGrid');
+      const title = document.getElementById('libraryTitle');
+      const pager = document.getElementById('libraryPager');
+      const back = document.getElementById('libraryBack');
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const owners = getOwners();
+      const multi = owners.length > 1;
+      pager.classList.toggle('hidden', !multi);
+      back.classList.toggle('hidden', !(multi && selectedRole));
+      pager.innerHTML = selectedRole ? `${rightFromLineIcon()}<span>全局页</span>` : (libraryMode === 'roles' ? '1/2' : '2/2');
+      pager.title = selectedRole ? '切换到全局目录' : (libraryMode === 'roles' ? '切换到全局目录' : '切换到角色目录');
+      if (!multi) { libraryMode = 'global'; selectedRole = ''; }
+      if (multi && libraryMode === 'roles' && !selectedRole) {
+        title.textContent = '角色';
+        renderRolePage(grid, owners, q);
+        return;
+      }
+      title.textContent = selectedRole ? `${selectedRole}的摘录` : '目录';
+      renderRecordList(grid, getFilteredRecords(q));
+    }
+
+    function renderRolePage(grid, owners, q) {
+      const filteredOwners = owners.filter(owner => {
+        if (!q) return true;
+        const related = records.filter(r => normalizeSpeaker(r.owner) === owner);
+        const hay = [owner, ...related.map(recordHaystack)].join('\n').toLowerCase();
+        return hay.includes(q);
+      });
+      if (!filteredOwners.length) {
+        grid.innerHTML = '<div class="empty full">还没有找到匹配角色。</div>';
+        return;
+      }
+      grid.innerHTML = `<div class="role-grid">${filteredOwners.map(owner => {
+        const related = records.filter(r => normalizeSpeaker(r.owner) === owner);
+        const sample = related.find(r => getAvatar(owner, r));
+        return `<button class="role-card" onclick="openRole('${escapeJS(owner)}')">
+          ${avatarHTML(owner, sample, 'role-avatar')}
+          <span class="role-name">${escapeHTML(owner)}</span>
+          <span class="role-count">${related.length} 条摘录</span>
+        </button>`;
+      }).join('')}</div>`;
+    }
+
+    function renderRecordList(grid, filtered) {
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="empty full">还没有找到匹配记录。要不要收录一个新的？</div>';
+        return;
+      }
+      grid.innerHTML = `<div class="toc-list">${filtered.map(r => `
+        <article class="toc-item" onclick="openRecord('${r.id}')">
+          <div class="toc-line">
+            <div class="toc-title">${escapeHTML(r.title || '未命名摘录')}</div>
+            <div class="toc-dots"></div>
+            <div class="toc-count">${(r.messages || []).length} 条</div>
+          </div>
+          <div class="toc-sub">
+            ${r.owner ? `<span class="toc-date">${escapeHTML(r.owner)}</span>` : ''}
+            ${r.date ? `<span class="toc-date">${escapeHTML(r.date)}</span>` : ''}
+            <span class="toc-excerpt">${escapeHTML(firstLine(r))}</span>
+            ${(r.tags || []).length ? `<span class="toc-tags">${(r.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</span>` : ''}
+          </div>
+        </article>
+      `).join('')}</div>`;
+    }
+
+    function getFilteredRecords(q) {
+      return records.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).filter(r => {
+        if (selectedRole && normalizeSpeaker(r.owner) !== selectedRole) return false;
+        const hay = recordHaystack(r).toLowerCase();
+        return !q || hay.includes(q);
+      });
+    }
+
+    function recordHaystack(r) {
+      return [r.title, r.owner, r.date, (r.tags || []).join(' '), r.note, ...(r.people || []), ...(r.messages || []).map(m => m.speaker + ' ' + m.content)].join('\n');
+    }
+
+    function toggleLibraryPage() {
+      selectedRole = '';
+      libraryMode = libraryMode === 'roles' ? 'global' : 'roles';
+      renderLibrary();
+    }
+
+    function backToRolePage() {
+      selectedRole = '';
+      libraryMode = 'roles';
+      renderLibrary();
+    }
+
+    function openRole(owner) {
+      selectedRole = normalizeSpeaker(owner);
+      libraryMode = 'roles';
+      document.getElementById('searchInput').value = '';
+      renderLibrary();
+    }
+
+    function renderTagFilter() {
+      // 标签筛选已移除；保留空函数用于兼容旧调用。
+    }
+
+    function firstLine(record) {
+      const msg = (record.messages || []).find(m => m.content && m.content.trim());
+      return msg ? msg.content.trim().replace(/\s+/g, ' ').slice(0, 64) : (record.note || '');
+    }
+
+    function openRecord(id) {
+      const record = records.find(r => r.id === id);
+      if (!record) return;
+      currentId = id;
+      document.getElementById('readerTitle').textContent = record.title || '未命名摘录';
+      const metaItems = [
+        record.owner ? ['SUBJECT', record.owner] : null,
+        record.date ? ['TIMELINE', record.date] : null,
+        ['LINES', `${(record.messages || []).length} 条发言`]
+      ].filter(Boolean);
+      document.getElementById('readerMeta').innerHTML = `
+        <div class="reader-meta-grid">
+          ${metaItems.map(([label, value]) => `<span class="reader-meta-item"><span class="reader-meta-label">${label}</span><span>${escapeHTML(value)}</span></span>`).join('')}
+        </div>
+        ${record.note ? `<div class="reader-note">${escapeHTML(record.note)}</div>` : ''}
+      `;
+      document.getElementById('readerTags').innerHTML = (record.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('');
+      document.getElementById('readerMessages').innerHTML = (record.messages || []).map(m => {
+        const cls = speakerClass(m.speaker);
+        const name = normalizeSpeaker(m.speaker);
+        const hasAvatar = !!getAvatar(name, record);
+        const speaker = hasAvatar ? `<div class="speaker-id">${avatarHTML(name, record, 'reader-avatar')}<span class="speaker-name">${escapeHTML(name)}</span></div>` : `<div class="speaker-id only-name"><span class="speaker-name">${escapeHTML(name)}</span></div>`;
+        return `<div class="msg ${cls}"><div class="speaker">${speaker}</div><div class="bubble">${escapeHTML(m.content || '')}</div></div>`;
+      }).join('') + '<div class="reader-footer-mark">CURATED BY QUOTE BOOK</div>';
+      updateReaderExportLabel(record);
+      showView('reader');
+    }
+
+    function updateReaderExportLabel(record) {
+      const btn = document.getElementById('readerExportBtn');
+      if (!btn) return;
+      btn.dataset.target = '';
+      btn.title = '导出摘要';
+      btn.setAttribute('aria-label', '导出摘要');
+    }
+
+    function switchEditorPanel(panel) {
+      const isImport = panel === 'import';
+      document.getElementById('editorMainPanel')?.classList.toggle('hidden', isImport);
+      document.getElementById('editorImportPanel')?.classList.toggle('hidden', !isImport);
+      document.getElementById('editorTabMain')?.classList.toggle('active', !isImport);
+      document.getElementById('editorTabImport')?.classList.toggle('active', isImport);
+      if (!isImport) requestAnimationFrame(autoGrowMessageTextareas);
+    }
+
+    function newRecord() {
+      editingId = null;
+      editingMessages = [];
+      editingPeople = [];
+      editingOwner = selectedRole || '';
+      editingAvatars = {};
+      if (editingOwner) {
+        const avatar = findAvatarByName(editingOwner);
+        if (avatar) editingAvatars[normalizeSpeaker(editingOwner)] = avatar;
+      }
+      document.getElementById('editorHeading').textContent = '新增摘录';
+      document.getElementById('ownerField').value = editingOwner;
+      refreshOwnerAvatar();
+      document.getElementById('titleField').value = '';
+      document.getElementById('useDate').checked = false;
+      document.getElementById('useTags').checked = false;
+      document.getElementById('useNote').checked = false;
+      document.getElementById('dateField').value = '';
+      document.getElementById('tagsField').value = '';
+      document.getElementById('noteField').value = '';
+      document.getElementById('pasteBox').value = '';
+      document.getElementById('deleteBtn').classList.add('hidden');
+      toggleOptionalFields();
+      renderPeopleEditor();
+      renderMessageEditor();
+      editorDirty = false;
+      showView('editor');
+      switchEditorPanel('main');
+      requestAnimationFrame(autoGrowMessageTextareas);
+    }
+
+    function editCurrent() {
+      if (!currentId) return;
+      const record = records.find(r => r.id === currentId);
+      if (!record) return;
+      editingId = currentId;
+      editingMessages = JSON.parse(JSON.stringify(record.messages || []));
+      editingPeople = getRecordPeople(record);
+      editingOwner = normalizeSpeaker(record.owner || editingPeople[0] || '');
+      editingAvatars = { ...(record.avatars || {}) };
+      document.getElementById('editorHeading').textContent = '编辑摘录';
+      document.getElementById('ownerField').value = editingOwner;
+      refreshOwnerAvatar();
+      document.getElementById('titleField').value = record.title || '';
+      document.getElementById('useDate').checked = !!record.date;
+      document.getElementById('useTags').checked = !!(record.tags || []).length;
+      document.getElementById('useNote').checked = !!record.note;
+      document.getElementById('dateField').value = record.date || '';
+      document.getElementById('tagsField').value = (record.tags || []).join(', ');
+      document.getElementById('noteField').value = record.note || '';
+      document.getElementById('pasteBox').value = '';
+      document.getElementById('deleteBtn').classList.remove('hidden');
+      toggleOptionalFields();
+      renderPeopleEditor();
+      renderMessageEditor();
+      editorDirty = false;
+      showView('editor');
+      switchEditorPanel('main');
+      requestAnimationFrame(autoGrowMessageTextareas);
+    }
+    function cancelEdit() {
+      records = loadRecords().map(migrateOne);
+      if (editingId && records.some(r => r.id === editingId)) {
+        openRecord(editingId);
+      } else {
+        showView('library');
+      }
+    }
+
+    function toggleOptionalFields() {
+      const pairs = [
+        ['useDate', 'dateWrap'],
+        ['useTags', 'tagsWrap'],
+        ['useNote', 'noteWrap']
+      ];
+      for (const [checkId, wrapId] of pairs) {
+        const checked = document.getElementById(checkId).checked;
+        document.getElementById(wrapId).classList.toggle('hidden', !checked);
+      }
+    }
+
+    function updateOwner(value) { editingOwner = value.trim(); editorDirty = true; refreshOwnerAvatar(); }
+
+    function addPerson(name = '') {
+      const n = (name || '').trim();
+      if (n && !editingPeople.includes(normalizeSpeaker(n))) editingPeople.push(normalizeSpeaker(n));
+      else if (!n) editingPeople.push('');
+      renderPeopleEditor();
+      renderMessageEditor();
+    }
+
+    function updatePerson(index, value) {
+      editingPeople[index] = value.trim();
+      editorDirty = true;
+    }
+
+    function commitPeopleEdit() {
+      editingPeople = uniqueNames(editingPeople);
+      renderPeopleEditor();
+      renderMessageEditor();
+    }
+
+    function removePerson(index) {
+      editingPeople.splice(index, 1);
+      renderPeopleEditor();
+      renderMessageEditor();
+    }
+
+    function syncPeopleFromMessages() {
+      editingPeople = uniqueNames([...editingPeople, ...editingMessages.map(m => m.speaker)]);
+      if (!editingOwner && editingPeople[0]) {
+        editingOwner = editingPeople[0];
+        document.getElementById('ownerField').value = editingOwner;
+        refreshOwnerAvatar();
+      }
+    }
+
+    function renderPeopleEditor() {
+      const box = document.getElementById('peopleEditor');
+      if (!box) return;
+      if (!editingPeople.length) {
+        box.innerHTML = '<div class="empty" style="padding:18px">还没有发言人。可以手动添加，也可以粘贴记录后自动解析。</div>';
+        return;
+      }
+      box.innerHTML = editingPeople.map((person, i) => `
+        <div class="person-row">
+          <button class="person-badge" type="button" onclick="chooseAvatarFor('${escapeJS(person || '')}')" title="上传头像" aria-label="上传头像">${avatarButtonContent(person, '员')}</button>
+          <div class="person-input-wrap">
+            <input class="field" value="${escapeAttr(person)}" placeholder="发言人" oninput="updatePerson(${i}, this.value)" onchange="commitPeopleEdit()" />
+          </div>
+          <button class="person-icon-btn danger" type="button" onclick="removePerson(${i})" title="删除发言人" aria-label="删除发言人">－</button>
+        </div>
+      `).join('');
+    }
+
+    function toggleOwnerMenu() {
+      const menu = document.getElementById('ownerMenu');
+      const options = uniqueNames(editingPeople);
+      if (!options.length) return toast('还没有可选择的发言人');
+      menu.innerHTML = options.map(name => `<button type="button" onclick="selectOwner('${escapeJS(name)}')">${escapeHTML(name)}</button>`).join('');
+      const willOpen = menu.classList.contains('hidden');
+      closeSelectPops(menu);
+      menu.classList.toggle('hidden', !willOpen);
+    }
+
+    function selectOwner(name) {
+      editingOwner = normalizeSpeaker(name);
+      document.getElementById('ownerField').value = editingOwner;
+      refreshOwnerAvatar();
+      document.getElementById('ownerMenu').classList.add('hidden');
+    }
+
+    function chooseAvatarFor(name) {
+      avatarTarget = name === 'owner' ? (document.getElementById('ownerField').value.trim() || editingOwner) : name;
+      if (!avatarTarget) return toast('先填写名字，再上传头像');
+      document.getElementById('avatarFile').click();
+    }
+
+    function canvasHasAlpha(ctx, w, h) {
+      try {
+        const data = ctx.getImageData(0, 0, w, h).data;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] < 255) return true;
+        }
+      } catch (e) {
+        return /png|webp|gif/i.test(ctx.canvas.dataset.sourceType || '');
+      }
+      return false;
+    }
+    function compressAvatarFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            const max = 512;
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.dataset.sourceType = file.type || '';
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            if (canvasHasAlpha(ctx, w, h)) {
+              resolve(canvas.toDataURL('image/png'));
+            } else {
+              resolve(canvas.toDataURL('image/jpeg', 0.82));
+            }
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    async function handleAvatarFile(event) {
+      const file = event.target.files[0];
+      if (!file || !avatarTarget) return;
+      const name = normalizeSpeaker(avatarTarget);
+      try {
+        const dataUrl = await compressAvatarFile(file);
+        editingAvatars = editingAvatars || {};
+        editingAvatars[name] = dataUrl;
+        for (const r of records) {
+          if (normalizeSpeaker(r.owner) === name || getRecordPeople(r).includes(name)) {
+            r.avatars = r.avatars || {};
+            r.avatars[name] = dataUrl;
+          }
+        }
+        persist();
+        refreshOwnerAvatar();
+        renderPeopleEditor();
+        renderLibrary();
+        toast('头像已压缩并保存');
+      } catch (err) {
+        console.error(err);
+        toast('头像处理失败，换张图试试');
+      } finally {
+        avatarTarget = null;
+        event.target.value = '';
+      }
+    }
+
+    function addMessage(speaker = '', content = '') {
+      editingMessages.push({ speaker, content });
+      editorDirty = true;
+      renderMessageEditor();
+    }
+
+    function updateMessage(index, key, value) {
+      editingMessages[index][key] = value;
+      editorDirty = true;
+      if (key === 'content' && event?.target) autoGrowTextarea(event.target);
+    }
+
+    function removeMessage(index) {
+      editingMessages.splice(index, 1);
+      editorDirty = true;
+      renderMessageEditor();
+    }
+
+    function moveMessage(index, delta) {
+      const next = index + delta;
+      if (next < 0 || next >= editingMessages.length) return;
+      const [item] = editingMessages.splice(index, 1);
+      editingMessages.splice(next, 0, item);
+      editorDirty = true;
+      renderMessageEditor();
+    }
+
+    function autoGrowTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${Math.max(38, el.scrollHeight + 2)}px`;
+    }
+    function autoGrowMessageTextareas() {
+      document.querySelectorAll('#messageEditor textarea').forEach(autoGrowTextarea);
+    }
+    function renderMessageEditor() {
+      const box = document.getElementById('messageEditor');
+      if (!editingMessages.length) {
+        box.innerHTML = '<div class="empty">还没有发言。</div>';
+        return;
+      }
+      box.innerHTML = editingMessages.map((m, i) => `
+        <div class="mini-msg">
+          <div class="speaker-combo">
+            <input class="speaker-input" value="${escapeAttr(m.speaker || '')}" placeholder="发言人" oninput="updateMessage(${i}, 'speaker', this.value)" />
+            <button class="field-icon-btn" type="button" onclick="toggleMessageSpeakerMenu(${i})" title="选择发言人" aria-label="选择发言人"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M0.16 4.0802 15.84 4.08l-7.8401 7.84L0.16 4.0802Z" clip-rule="evenodd"></path></svg></button>
+            <div id="speakerMenu-${i}" class="select-pop hidden">${speakerOptions(m.speaker).map(o => `<button type="button" onclick="selectMessageSpeaker(${i}, '${escapeJS(o)}')">${escapeHTML(o)}</button>`).join('')}</div>
+          </div>
+          <textarea rows="1" oninput="updateMessage(${i}, 'content', this.value)">${escapeHTML(m.content || '')}</textarea>
+          <div class="msg-actions">
+            <button class="btn mini-action" onclick="moveMessage(${i}, -1)" title="上移" aria-label="上移">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg>
+            </button>
+            <button class="btn mini-action" onclick="moveMessage(${i}, 1)" title="下移" aria-label="下移">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
+            </button>
+            <button class="btn mini-action danger" onclick="removeMessage(${i})" title="删除" aria-label="删除">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      box.querySelectorAll('textarea').forEach(autoGrowTextarea);
+    }
+
+    function speakerOptions(current) {
+      const set = new Set(uniqueNames(editingPeople));
+      const raw = String(current ?? '').trim();
+      if (raw) {
+        const n = normalizeSpeaker(raw);
+        if (![...set].includes(n)) set.add(n);
+      }
+      return [...set];
+    }
+
+    function toggleMessageSpeakerMenu(index) {
+      const menu = document.getElementById(`speakerMenu-${index}`);
+      if (!menu) return;
+      const willOpen = menu.classList.contains('hidden');
+      closeSelectPops(menu);
+      menu.classList.toggle('hidden', !willOpen);
+    }
+
+    function selectMessageSpeaker(index, name) {
+      editingMessages[index].speaker = normalizeSpeaker(name);
+      renderMessageEditor();
+    }
+
+    function parsePastedText() {
+      const text = document.getElementById('pasteBox').value.trim();
+      if (!text) return toast('先粘贴一点聊天记录呀');
+      const parsed = parseConversation(text);
+      if (!parsed.length) return toast('没有解析到发言，可以用“鹿眷：内容”这种格式试试');
+      editingMessages = parsed;
+      editorDirty = true;
+      syncPeopleFromMessages();
+      renderPeopleEditor();
+      renderMessageEditor();
+      switchEditorPanel('main');
+      toast(`解析完成：${parsed.length} 条发言`);
+    }
+
+    function parseConversation(text) {
+      const lines = text.replace(/\r\n/g, '\n').split('\n');
+      const result = [];
+      let current = null;
+      const re = /^\s*([^：:\n]{1,24})\s*[：:]\s*(.*)$/;
+      for (const line of lines) {
+        const match = line.match(re);
+        if (match && looksLikeSpeaker(match[1])) {
+          if (current) result.push(current);
+          current = { speaker: normalizeSpeaker(match[1]), content: match[2] || '' };
+        } else if (current) {
+          current.content += (current.content ? '\n' : '') + line;
+        } else if (line.trim()) {
+          current = { speaker: '旁白', content: line };
+        }
+      }
+      if (current) result.push(current);
+      return result.map(m => ({ speaker: normalizeSpeaker(m.speaker), content: m.content.trim() })).filter(m => m.content);
+    }
+
+    function looksLikeSpeaker(name) {
+      const n = name.trim();
+      if (legacyAliases[n]) return true;
+      return /^[\u4e00-\u9fa5A-Za-z0-9_\- ]{1,24}$/.test(n);
+    }
+
+    function saveRecord() {
+      const title = document.getElementById('titleField').value.trim() || '未命名摘录';
+      const ownerRaw = document.getElementById('ownerField').value.trim() || editingOwner;
+      if (!ownerRaw) return toast('请填写摘录归属');
+      const owner = normalizeSpeaker(ownerRaw);
+      const useDate = document.getElementById('useDate').checked;
+      const useTags = document.getElementById('useTags').checked;
+      const useNote = document.getElementById('useNote').checked;
+      const date = useDate ? document.getElementById('dateField').value.trim() : '';
+      const tags = useTags ? document.getElementById('tagsField').value.split(/[,，]/).map(t => t.trim()).filter(Boolean) : [];
+      const note = useNote ? document.getElementById('noteField').value.trim() : '';
+      const messages = editingMessages.map(m => ({ speaker: normalizeSpeaker(m.speaker), content: (m.content || '').trim() })).filter(m => m.content);
+      if (!messages.length) return toast('至少要有一句话才能存档');
+      const old = editingId ? records.find(r => r.id === editingId) : null;
+      const people = uniqueNames([...editingPeople, ...messages.map(m => m.speaker)]);
+      const avatars = collectAvatarsForRecord(owner, people, messages, old);
+      const payload = { id: editingId || uid(), title, owner, date, tags, note, people, avatars, messages };
+      if (editingId) {
+        const idx = records.findIndex(r => r.id === editingId);
+        records[idx] = payload;
+      } else {
+        records.unshift(payload);
+      }
+      persist();
+      editorDirty = false;
+      selectedRole = owner;
+      libraryMode = getOwners().length > 1 ? 'roles' : 'global';
+      toast('保存好了');
+      openRecord(payload.id);
+    }
+    function deleteEditingRecord() {
+      if (!editingId) return;
+      if (!confirm('确定删除这条摘录吗？')) return;
+      records = records.filter(r => r.id !== editingId);
+      persist();
+      toast('已删除');
+      showView('library');
+    }
+
+    function markdownForRecord(record) {
+      const tags = (record.tags || []).join(' / ');
+      const lines = [`# ${record.title || '未命名摘录'}`, '', `归属：${record.owner || '未命名'}`];
+      if (record.date) lines.push(`日期：${record.date}`);
+      if (tags) lines.push(`标签：${tags}`);
+      if (record.note) lines.push(`备注：${record.note}`);
+      lines.push('', '---', '');
+      for (const m of record.messages || []) {
+        lines.push(`${normalizeSpeaker(m.speaker)}：`);
+        lines.push(m.content || '');
+        lines.push('');
+      }
+      return lines.join('\n').trim() + '\n';
+    }
+
+    function exportCurrentMarkdown() {
+      const record = records.find(r => r.id === currentId);
+      if (!record) return;
+      downloadText(safeFileName(record.title) + '.md', markdownForRecord(record), 'text/markdown');
+      toast('已导出 Markdown');
+    }
+
+    function exportAllMarkdown() {
+      const md = records.map(markdownForRecord).join('\n\n---\n\n');
+      downloadText('摘录书.md', md, 'text/markdown');
+      toast('全部 Markdown 已导出');
+    }
+
+    function exportJSON() {
+      downloadText('quote_book_backup.json', JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), records }, null, 2), 'application/json');
+      toast('JSON 备份已导出');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          const incoming = (Array.isArray(data) ? data : data.records).map(migrateOne);
+          if (!Array.isArray(incoming)) throw new Error('bad format');
+          const map = new Map(records.map(r => [r.id, r]));
+          for (const r of incoming) map.set(r.id || uid(), { ...r, id: r.id || uid() });
+          records = [...map.values()];
+          persist();
+          renderLibrary();
+          toast(`导入完成：${incoming.length} 条`);
+          showView('library');
+        } catch (e) {
+          toast('导入失败，JSON 格式不对');
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function refreshCoverQuote() {
+      const all = records.flatMap(r => (r.messages || []).map(m => m.content).filter(Boolean));
+      const quote = all.length ? all[Math.floor(Math.random() * all.length)] : '“你想叫，我就得应。”';
+      const cleaned = quote.replace(/\s+/g, ' ');
+      document.getElementById('coverQuote').textContent = '“' + cleaned.slice(0, 46) + (cleaned.length > 46 ? '……' : '') + '”';
+    }
+
+    function downloadText(filename, text, type) {
+      const blob = new Blob([text], { type: type + ';charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function safeFileName(name) {
+      return (name || 'quote').replace(/[\\/:*?"<>|]/g, '_').slice(0, 80);
+    }
+
+    function escapeHTML(str) {
+      return String(str ?? '').replace(/[&<>"]/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '"' }[s]));
+    }
+
+    function escapeAttr(str) { return escapeHTML(str).replace(/'/g, '&#39;'); }
+    function escapeJS(str) {
+      return String(str ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\'")
+        .replace(/\n/g, '\n')
+        .replace(/\r/g, '');
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => el.classList.remove('show'), 1900);
+    }
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.select-pop') && !event.target.closest('.field-icon-btn')) closeSelectPops();
+    });
+    persist();
+    refreshCoverQuote();
+  </script>
+</body>
+</html>
