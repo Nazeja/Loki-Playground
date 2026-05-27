@@ -1,0 +1,49 @@
+# Loki Playground
+
+一些轻量、单文件、好玩的前端小工具集合。
+
+目前主要是给自己调试、预览、试验用：不需要后端，不需要构建，打开网页就能跑。
+
+## 当前工具
+
+### 气泡调色台
+
+入口：[`index.html`](./index.html)
+
+用于预览聊天气泡/文本/引用/code/链接在不同配色下的效果。
+
+功能：
+
+- 背景色、背景图片、本地图片预览
+- 图片暗度遮罩
+- 气泡背景色与透明度
+- 标题、正文、译文、粗体、引用、代码、链接分别调色
+- 柔和预设色
+- 二维色盘 + HSL 微调
+- CSS 变量导出
+- 本地保存配色方案
+
+> 背景图片只在浏览器本地读取，不上传、不保存到仓库。
+
+## 使用方式
+
+直接打开 `index.html`。
+
+如果部署到 GitHub Pages：
+
+1. 新建仓库 `Loki-playground`
+2. 上传本仓库内容
+3. Settings → Pages
+4. Source 选择 `Deploy from a branch`
+5. Branch 选择 `main`，Folder 选择 `/root`
+6. 访问：`https://你的用户名.github.io/Loki-playground/`
+
+## 维护方式
+
+这是纯静态网页项目。
+
+后续更新时直接替换对应 HTML 文件，然后 commit / push 即可。
+
+## License
+
+MIT
