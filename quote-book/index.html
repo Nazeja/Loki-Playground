@@ -1077,11 +1077,12 @@
       grid-template-columns: 72px 1fr;
       gap: 14px;
       align-items: center;
-      padding: 11px 14px;
-      border-radius: 20px 20px 14px 14px;
-      background:
-        linear-gradient(135deg, rgba(255,220,168,.30), rgba(191,238,232,.18)),
-        rgba(255,252,244,.48);
+      padding: 8px 0 12px;
+      border: 0;
+      border-bottom: 1px solid rgba(80,60,45,.10);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
     .owner-badge, .person-badge {
       display: grid;
@@ -1456,7 +1457,7 @@
               <button class="page-action-btn reader-edit-btn" onclick="editCurrent()" title="编辑" aria-label="编辑">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
               </button>
-              <button id="readerExportBtn" class="page-action-btn" onclick="exportCurrentMarkdown()" title="导出摘要" aria-label="导出摘要">
+              <button id="readerExportBtn" class="page-action-btn" onclick="exportCurrentMarkdown()" title="导出摘录" aria-label="导出摘录">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19 22.5a4.75 4.75 0 0 1 3.5 -3.5a4.75 4.75 0 0 1 -3.5 -3.5a4.75 4.75 0 0 1 -3.5 3.5a4.75 4.75 0 0 1 3.5 3.5" /><path d="M11.5 19h-6.5a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v5" /><path d="M3 7l9 6l9 -6" /></svg>
               </button>
             </div>
@@ -1900,8 +1901,8 @@
       const btn = document.getElementById('readerExportBtn');
       if (!btn) return;
       btn.dataset.target = '';
-      btn.title = '导出摘要';
-      btn.setAttribute('aria-label', '导出摘要');
+      btn.title = '导出摘录';
+      btn.setAttribute('aria-label', '导出摘录');
     }
 
     function switchEditorPanel(panel) {
