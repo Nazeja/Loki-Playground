@@ -10,7 +10,6 @@
 
 ### 气泡调色台
 
-入口：[`index.html`](./index.html)  
 直达链接：[气泡调色台](https://nazeja.github.io/Loki-Playground/bubble-palette/)
 
 用于预览聊天气泡/文本/引用/code/链接在不同配色下的效果。
@@ -27,6 +26,20 @@
 - 本地保存配色方案
 
 > 背景图片只在浏览器本地读取，不上传、不保存到仓库。
+
+### 摘录书
+
+直达链接：[摘录书](https://nazeja.github.io/Loki-Playground/quote-book/)
+
+为喜欢的对话记录创造一本书。
+
+功能：
+
+- 粘贴对话记录并自动解析
+- 指定摘录归属角色
+- 自由增加发言人
+- 上传角色头像
+- 本地备份
 
 ## License
 
