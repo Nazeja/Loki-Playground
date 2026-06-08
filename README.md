@@ -41,6 +41,13 @@
 - 上传角色头像
 - 本地备份
 
+### InfinityNikkiAutoKey演奏预听
+
+直达链接: [演奏预听](https://nazeja.github.io/Loki-Playground/nikki-preview/)
+
+功能:
+- 懒得上游戏的时候在浏览器进行InfinityNikkiAutoKey演奏脚本的试听
+
 ## License
 
 MIT
