@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InfinityNikkiAutoKey 脚本预听</title>
+  <style>
+    :root { color-scheme: dark; --bg:#202329; --card:#292d34; --ink:#e8edf4; --muted:#a9b2c3; --line:#454b57; --accent:#8fa7ff; --bad:#ff8a9a; --editor:#34373d; --note:#fde68a; --highlight:#79799a; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-rounded,"HarmonyOS Sans","Microsoft YaHei",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+    main { max-width:1100px; margin:0 auto; padding:22px; }
+    header { display:flex; justify-content:space-between; gap:14px; align-items:center; margin-bottom:14px; }
+    h1 { margin:0; font-size:24px; white-space:nowrap; word-break:keep-all; }
+    a { color:var(--accent); text-decoration:none; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:0 10px 28px rgba(0,0,0,.16); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px; margin-bottom:12px; }
+    button, select, input { border:1px solid var(--line); background:#343943; color:var(--ink); border-radius:12px; padding:9px 12px; font:inherit; }
+    button { cursor:pointer; font-weight:650; }
+    button.primary { background:var(--accent); color:#10131a; border-color:var(--accent); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    label { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:14px; }
+    input[type="range"] { width:120px; padding:0; }
+    .status { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .wrap { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:12px; }
+    .editor { display:flex; flex-direction:column; gap:10px; }
+    textarea { width:100%; height:70vh; min-height:460px; resize:none; border:0; outline:0; border-radius:18px; padding:16px; background:var(--editor); color:#fff7d6; font:14px/1.55 ui-rounded,"HarmonyOS Sans","Microsoft YaHei",system-ui,sans-serif; }
+    .load-status { margin:-4px 0 12px; padding:0 4px; color:var(--muted); font-size:13px; min-height:18px; }
+    .side { padding:14px; height:70vh; min-height:460px; overflow:auto; }
+    .errors { color:var(--bad); font-size:13px; white-space:pre-wrap; }
+    .keys { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:12px; }
+    .key { border:1px solid var(--line); border-radius:10px; padding:8px 0; text-align:center; background:#343943; font-weight:700; font-size:13px; }
+    .key.on { background:var(--accent); color:#10131a; border-color:var(--accent); }
+    input[type="checkbox"] { appearance:none; width:18px; height:18px; padding:0; border-radius:6px; border:1px solid var(--line); background:#343943; display:inline-grid; place-content:center; }
+    input[type="checkbox"]:checked { background:rgb(94,94,125); border-color:rgb(94,94,125); }
+    input[type="checkbox"]:checked::after { content:""; width:5px; height:9px; border:solid #fff7d6; border-width:0 2px 2px 0; transform:rotate(45deg); margin-bottom:2px; }
+    .tracks { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+    .track-group { display:flex; flex-direction:column; gap:6px; }
+    .thread-section { border:1px solid var(--line); border-radius:14px; padding:9px 10px; background:#343943; color:#fff7d6; font-size:12px; white-space:pre-wrap; word-break:break-word; min-height:38px; }
+    .track { border:1px solid var(--line); border-radius:14px; padding:10px; background:var(--highlight); color:#fff7d6; }
+    .track.off { opacity:.45; }
+    .track.active { border-color:var(--note); box-shadow:0 0 0 1px var(--note) inset; }
+    .track-head { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#fff7d6; font-size:13px; margin-bottom:6px; }
+    .track-head label { font-size:12px; color:#fff7d6; }
+    .track-keys { color:var(--note); font-size:24px; font-weight:800; letter-spacing:.12em; min-height:28px; }
+    .track-source { color:#fff7d6; font-size:12px; white-space:pre-wrap; word-break:break-word; margin-top:4px; }
+    @media (max-width: 850px) {
+      main { padding:12px; }
+      header { gap:8px; }
+      h1 { font-size:clamp(17px,5vw,24px); }
+      .toolbar { display:grid; grid-template-columns:1fr 1fr; align-items:stretch; }
+      .toolbar button, .toolbar select { width:100%; }
+      .toolbar label { min-width:0; justify-content:space-between; }
+      .file-control, .range-control, .status { grid-column:1/-1; width:100%; }
+      .file-control { align-items:flex-start; flex-direction:column; }
+      input[type="file"] { width:100%; max-width:100%; min-width:0; }
+      input[type="range"] { width:100%; }
+      .wrap { grid-template-columns:1fr; }
+      textarea { height:45vh; min-height:260px; }
+      .side { height:auto; min-height:0; overflow:visible; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>InfinityNikkiAutoKey 脚本预听</h1>
+    <a href="../">返回</a>
+  </header>
+
+  <section class="toolbar panel">
+    <button id="play" class="primary">播放</button>
+    <button id="playCursor">从光标播放</button>
+    <button id="pause" disabled>暂停</button>
+    <button id="stop" disabled>停止</button>
+    <label>音色
+      <select id="wave">
+        <option value="pack_harp" selected>竖琴</option>
+        <option value="pack_lyre">里拉琴</option>
+        <option value="pack_piano">钢琴</option>
+        <option value="local_recording">本地录音</option>
+      </select>
+    </label>
+    <label class="file-control">录音 <input id="localSamples" type="file" accept="audio/*" multiple></label>
+    <label><input id="follow" type="checkbox" checked>滚动播放</label>
+    <label class="range-control">音量 <input id="volume" type="range" min="0" max="2" step="0.01" value="1"></label>
+    <span id="status" class="status">拍数 0 / 0</span>
+  </section>
+  <div id="loadStatus" class="load-status"></div>
+
+  <div class="wrap">
+    <div class="editor">
+      <textarea id="script" spellcheck="false" placeholder="粘贴 InfinityNikkiAutoKey 脚本"></textarea>
+    </div>
+    <aside class="side panel">
+      <div id="errors" class="errors"></div>
+      <div id="tracks" class="tracks"></div>
+      <div id="keys" class="keys"></div>
+    </aside>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const scriptEl = $('script'), playBtn = $('play'), playCursorBtn = $('playCursor'), pauseBtn = $('pause'), stopBtn = $('stop'), followEl = $('follow'), localSamplesEl = $('localSamples');
+  const statusEl = $('status'), loadStatusEl = $('loadStatus'), errorsEl = $('errors'), keysEl = $('keys'), tracksEl = $('tracks');
+  const order = 'ZXCVBNMASDFGHJQWERTYU'.split('');
+  const semis = { Z:48,X:50,C:52,V:53,B:55,N:57,M:59, A:60,S:62,D:64,F:65,G:67,H:69,J:71, Q:72,W:74,E:76,R:77,T:79,Y:81,U:83 };
+  const names = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  const sampleRoot = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
+  const packs = {
+    pack_harp: { name: '竖琴', dir: 'harp', ext: 'wav' },
+    pack_lyre: { name: '里拉琴', dir: 'lyre', ext: 'wav' },
+    pack_piano: { name: '钢琴', dir: 'piano', ext: 'mp3', peak: 0.34, legatoPeak: 0.26, attack: 0.018 }
+  };
+  const buffers = new Map(), packCache = new Map(), localBuffers = new Map();
+  const MAX_EXPANDED_LINES = 6000, MAX_EVENTS = 12000, MAX_LOOP_COUNT = 200;
+  const disabledThreads = new Set();
+  let ctx, master, timers = [], sources = [], scheduler = 0, pauseAt = 0, paused = false, playing = false, autoScroll = false;
+
+  keysEl.innerHTML = order.map(k => `<div class="key" id="k-${k}">${k}</div>`).join('');
+  scriptEl.value = localStorage.nikkiPreviewScript || '';
+  scriptEl.addEventListener('input', () => localStorage.nikkiPreviewScript = scriptEl.value);
+  scriptEl.addEventListener('scroll', () => {
+    if (playing && !autoScroll) followEl.checked = false;
+  });
+  localSamplesEl.addEventListener('change', loadLocalSamples);
+
+  function noteValue(raw) {
+    const m = raw.match(/^(\d+)(\.*)$/);
+    if (!m) return null;
+    let v = 4 / Number(m[1]), add = v / 2;
+    for (let i = 0; i < m[2].length; i++, add /= 2) v += add;
+    return v;
+  }
+
+  function beatOf(token, bpm) {
+    if (!token) return null;
+    token = token.replace(/\[[^\]]+\]/g, '');
+    if (/^\d+(\.\d+)?$/.test(token)) return Number(token) / (60000 / bpm);
+    if (!token.startsWith('$') && !token.startsWith('&')) return null;
+    const s = token.slice(1);
+    const mult = s.match(/^(\d+\.*)~(\d+(?:\.\d+)?)$/);
+    if (mult) return noteValue(mult[1]) * Number(mult[2]);
+    return noteValue(s);
+  }
+
+  function cleanLine(line, muted) {
+    const t = line.trim();
+    if (t.startsWith('-')) return { toggle: true, text: '' };
+    if (muted || !t || t.startsWith('#')) return { text: '' };
+    return { text: t };
+  }
+
+  function sourceLines(text) {
+    const raw = text.split(/\r?\n/), out = [];
+    let muted = false;
+    raw.forEach((line, i) => {
+      const item = cleanLine(line, muted);
+      if (item.toggle) { muted = !muted; return; }
+      if (item.text) out.push({ text: item.text, line: i + 1 });
+    });
+    return out;
+  }
+
+  function tokenize(item) {
+    if (!item) return [];
+    const t = item.text.trim();
+    if (t.toLowerCase().startsWith('$log')) return [];
+    return t.split(/\s+/).map(x => x.replace(/\[[^\]]+\]/g, ''));
+  }
+
+  function splitThreads(items) {
+    const main = [], threads = [{ name: 'main', items: main }];
+    for (let i = 0; i < items.length; i++) {
+      const p = tokenize(items[i]), cmd = (p[0] || '').toLowerCase();
+      if (cmd === '$thread-begin' && p[1]) {
+        const buf = [];
+        i++;
+        while (i < items.length) {
+          const q = tokenize(items[i]);
+          if ((q[0] || '').toLowerCase() === '$thread-end') break;
+          buf.push(items[i]);
+          i++;
+        }
+        threads.push({ name: p[1], items: buf });
+      } else main.push(items[i]);
+    }
+    return threads;
+  }
+
+  function addError(errs, msg) {
+    if (!errs.includes(msg)) errs.push(msg);
+  }
+
+  function expandThread(items, errs) {
+    const sections = new Map(), body = [];
+    let capped = false;
+    for (let i = 0; i < items.length; i++) {
+      const p = tokenize(items[i]), cmd = (p[0] || '').toLowerCase();
+      if (cmd === '$section-begin' && p[1]) {
+        const buf = [];
+        i++;
+        while (i < items.length) {
+          const q = tokenize(items[i]);
+          if ((q[0] || '').toLowerCase() === '$section-end') break;
+          buf.push(items[i]);
+          i++;
+        }
+        sections.set(p[1], buf);
+      } else body.push(items[i]);
+    }
+    const out = [];
+    const push = (list, stack = []) => {
+      if (capped) return;
+      for (let i = 0; i < list.length; i++) {
+        if (out.length >= MAX_EXPANDED_LINES) { addError(errs, `展开行数超过 ${MAX_EXPANDED_LINES}，已截断`); capped = true; return; }
+        const p = tokenize(list[i]), cmd = (p[0] || '').toLowerCase();
+        if (cmd === '$section' && sections.has(p[1])) {
+          if (stack.includes(p[1])) { addError(errs, `section 循环引用：${[...stack, p[1]].join(' -> ')}`); continue; }
+          const called = sections.get(p[1]).map(x => ({ ...x, display: `${list[i].text} · ${x.text}`, callLine: list[i].line }));
+          push(called, [...stack, p[1]]);
+        }
+        else if ((cmd === '$loop-begin' || cmd === '$loop-start')) {
+          const count = Math.min(MAX_LOOP_COUNT, Math.max(1, Number(p[1]) || 1)), buf = [];
+          if ((Number(p[1]) || 1) > MAX_LOOP_COUNT) addError(errs, `loop 次数超过 ${MAX_LOOP_COUNT}，已截断`);
+          i++;
+          while (i < list.length) {
+            const q = tokenize(list[i]);
+            if ((q[0] || '').toLowerCase() === '$loop-end') break;
+            buf.push(list[i]);
+            i++;
+          }
+          for (let n = 0; n < count; n++) push(buf, stack);
+        } else out.push(list[i]);
+      }
+    };
+    push(body);
+    return out;
+  }
+
+  function parseLine(tokens, item, state, out, errs, thread) {
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i], cmd = tok.toLowerCase();
+      const add = (keys, beats) => {
+        if (keys.length) {
+          if (out.length >= MAX_EVENTS) { addError(errs, `事件数超过 ${MAX_EVENTS}，已截断`); return false; }
+          out.push({ sec: state.sec, pos: state.pos, beats, keys, line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, thread });
+        }
+        state.sec += beats * 60 / state.bpm;
+        state.pos += beats;
+        return true;
+      };
+      if (cmd.startsWith('instrument:')) continue;
+      if (cmd === '$bpm') { state.bpm = Number(tokens[++i]) || state.bpm; continue; }
+      if (cmd === '$beat') { state.beat = Number(tokens[++i]) || state.beat; continue; }
+      if (cmd === '$delay-common') { state.def = beatOf(tokens[++i], state.bpm) ?? state.def; continue; }
+      if (cmd === '$duration-common' || cmd === '$delay-before') { i++; continue; }
+      if (cmd === '$legato') {
+        const keys = (tokens[++i] || '').toUpperCase().replace(/[^A-Z_]/g, '').split('');
+        let dur = 1, shares = '';
+        if (tokens[i + 1] && /^\d+(\.\d+)?$/.test(tokens[i + 1])) dur = Number(tokens[++i]);
+        if (tokens[i + 1] && /^\d+$/.test(tokens[i + 1])) shares = tokens[++i];
+        if (!keys.length) { errs.push(`line ${item.line}: legato`); continue; }
+        const weights = keys.map((_, n) => Math.max(0, Number(shares[n] || 1)));
+        const total = weights.reduce((a, b) => a + b, 0) || keys.length;
+        let offsetBeat = 0, offsetSec = 0;
+        keys.forEach((k, n) => {
+          const beats = dur * (weights[n] || 1) / total, secs = beats * 60 / state.bpm;
+          if (k !== '_') {
+            if (out.length >= MAX_EVENTS) { addError(errs, `事件数超过 ${MAX_EVENTS}，已截断`); return; }
+            out.push({ sec: state.sec + offsetSec, pos: state.pos + offsetBeat, beats, keys: [k], line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, thread, legato: true, legatoIndex: n, legatoCount: keys.filter(x => x !== '_').length });
+          }
+          offsetBeat += beats;
+          offsetSec += secs;
+        });
+        state.sec += dur * 60 / state.bpm;
+        state.pos += dur;
+        continue;
+      }
+      const waitBeat = beatOf(tok, state.bpm);
+      if (waitBeat !== null) { add([], waitBeat); continue; }
+      if (tok.startsWith('$') || tok === '~') continue;
+      if (/^[A-Za-z_]+$/.test(tok)) {
+        let dur = state.def;
+        const b = beatOf(tokens[i + 1], state.bpm);
+        if (b !== null) { dur = b; i++; }
+        add(tok.toUpperCase().replace(/_/g, '').split(''), dur);
+      }
+    }
+  }
+
+  function parse(text) {
+    const items = sourceLines(text), threads = splitThreads(items), out = [], errs = [];
+    let globalBpm = 60, globalBeat = 4, sawBpm = false, sawBeat = false;
+    items.forEach(item => {
+      const p = tokenize(item), cmd = (p[0] || '').toLowerCase();
+      if (cmd === '$bpm' && !sawBpm) { globalBpm = Number(p[1]) || globalBpm; sawBpm = true; }
+      if (cmd === '$beat' && !sawBeat) { globalBeat = Number(p[1]) || globalBeat; sawBeat = true; }
+    });
+    threads.forEach(th => {
+      if (out.length >= MAX_EVENTS) return;
+      const state = { bpm: globalBpm, beat: globalBeat, def: 0.5, pos: 0, sec: 0 };
+      for (const item of expandThread(th.items, errs)) {
+        if (out.length >= MAX_EVENTS) break;
+        parseLine(tokenize(item), item, state, out, errs, th.name);
+      }
+    });
+    out.sort((a, b) => a.sec - b.sec || a.line - b.line);
+    let seconds = 0, length = 0;
+    out.forEach(e => {
+      seconds = Math.max(seconds, e.sec + e.beats * 60 / e.bpm);
+      length = Math.max(length, e.pos + e.beats);
+    });
+    if (out.length >= MAX_EVENTS) errs.push(`事件数达到上限 ${MAX_EVENTS}，已停止解析`);
+    return { events: out, threads: threads.map(th => th.name), length, seconds, errors: errs };
+  }
+
+  function ensureAudio() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain();
+      master.connect(ctx.destination);
+    }
+    master.gain.value = Number($('volume').value) * 0.45;
+    return ctx.resume();
+  }
+
+  function midiOf(k) { return semis[k]; }
+  function noteName(midi) { return names[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1); }
+  function freqMidi(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  function keyFromFile(name) {
+    const base = name.replace(/\.[^.]+$/, '').toUpperCase();
+    const tokens = base.split(/[^A-Z]+/).filter(Boolean);
+    for (const token of tokens) if (order.includes(token)) return token;
+    const hits = order.filter(k => base.includes(k));
+    return hits.length === 1 ? hits[0] : '';
+  }
+
+  async function loadLocalSamples() {
+    await ensureAudio();
+    localBuffers.clear();
+    let loaded = 0;
+    for (const file of localSamplesEl.files || []) {
+      const key = keyFromFile(file.name);
+      if (!key) continue;
+      try {
+        localBuffers.set(key, await ctx.decodeAudioData(await file.arrayBuffer()));
+        loaded++;
+      } catch {}
+    }
+    statusEl.textContent = `本地录音 ${loaded} / ${order.length}`;
+    loadStatusEl.textContent = `本地录音 ${loaded} / ${order.length}`;
+    if (loaded) $('wave').value = 'local_recording';
+  }
+
+  function packUrl(pack, keyName) {
+    return `nikki_record/${pack.dir}/${keyName}.${pack.ext}`;
+  }
+
+  function packUrls(pack, keyName) {
+    const file = packUrl(pack, keyName);
+    const bases = [document.baseURI, location.href, new URL('./', location.href).href, location.origin + '/nikki-preview/'];
+    return [...new Set(bases.map(base => new URL(file, base).href))];
+  }
+
+  async function loadPackSample(instrument, keyName) {
+    const pack = packs[instrument];
+    if (!pack) return null;
+    const cacheKey = `${instrument}:${keyName}`;
+    if (packCache.has(cacheKey)) return packCache.get(cacheKey);
+    const urls = packUrls(pack, keyName);
+    let lastError = null;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+        packCache.set(cacheKey, buf);
+        return buf;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    pack.lastError = `尝试路径：${urls.join(' | ')}；最后错误：${lastError?.message || lastError}`;
+    console.warn(`加载${pack.name}${keyName}失败`, urls, lastError);
+    return null;
+  }
+
+  async function loadSample(instrument, midi) {
+    if (instrument === 'synthetic') return null;
+    const key = `${instrument}:${midi}`;
+    if (buffers.has(key)) return buffers.get(key);
+    const url = `${sampleRoot}${instrument}-mp3/${noteName(midi)}.mp3`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+      buffers.set(key, buf);
+      return buf;
+    } catch {
+      buffers.set(key, null);
+      return null;
+    }
+  }
+
+  function canFetchPacks() { return location.protocol === 'http:' || location.protocol === 'https:'; }
+
+  function applyPackToLocalBuffers(instrument) {
+    if (!packs[instrument]) return 0;
+    localBuffers.clear();
+    let loaded = 0;
+    for (const keyName of order) {
+      const buf = packCache.get(`${instrument}:${keyName}`);
+      if (buf) { localBuffers.set(keyName, buf); loaded++; }
+    }
+    return loaded;
+  }
+
+  async function preload(events) {
+    const instrument = $('wave').value;
+    if (packs[instrument]) {
+      const seen = new Set();
+      events.forEach(e => e.keys.forEach(k => seen.add(k)));
+      const keys = [...seen];
+      if (!keys.length) return { note: '', error: '' };
+      if (!canFetchPacks()) return { note: '', error: `${packs[instrument].name} 内置音源需要 HTTP/HTTPS 打开；当前是 ${location.protocol}，请改用“本地录音”手动选择音频` };
+      let missing = 0;
+      statusEl.textContent = `加载${packs[instrument].name} 0 / ${keys.length}`;
+      for (let i = 0; i < keys.length; i++) {
+        const keyName = keys[i];
+        const buf = await loadPackSample(instrument, keyName);
+        if (!buf) missing++;
+        statusEl.textContent = `加载${packs[instrument].name} ${i + 1} / ${keys.length}`;
+      }
+      const loaded = applyPackToLocalBuffers(instrument);
+      return missing ? { note: '', error: `${packs[instrument].name} 有 ${missing} 个键加载失败；${packs[instrument].lastError || `请检查 nikki_record/${packs[instrument].dir}`}` } : { note: `${packs[instrument].name} 已加载 ${loaded}/${keys.length}`, error: '' };
+    }
+    const seen = new Set();
+    for (const e of events) {
+      for (const k of e.keys) {
+        if (instrument === 'local_recording' && localBuffers.has(k)) continue;
+        const midi = midiOf(k);
+        if (midi >= 0 && midi <= 127) seen.add(midi);
+      }
+    }
+    const midis = [...seen];
+    if (!midis.length) return { note: '', error: '' };
+    statusEl.textContent = `加载音源 0 / ${midis.length}`;
+    for (let i = 0; i < midis.length; i++) {
+      await loadSample('orchestral_harp', midis[i]);
+      statusEl.textContent = `加载音源 ${i + 1} / ${midis.length}`;
+    }
+    return { note: '', error: '' };
+  }
+
+  function synthetic(midi, when, dur) {
+    const end = when + Math.max(0.16, dur + 0.12);
+    [[1, .12, 0], [2.01, .035, 3]].forEach(([mul, gain, detune]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      sources.push(o);
+      o.type = 'sine';
+      o.frequency.value = freqMidi(midi) * mul;
+      o.detune.value = detune;
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(gain, when + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, end);
+      o.connect(g).connect(master);
+      o.start(when); o.stop(end + 0.02);
+    });
+  }
+
+  function hit(k, when, dur, event = null) {
+    if (!semis[k]) return;
+    const instrument = $('wave').value, midi = midiOf(k);
+    let buf = null;
+    if (packs[instrument] || instrument === 'local_recording') buf = localBuffers.get(k);
+    else buf = buffers.get(`${instrument}:${midi}`);
+    if (instrument === 'local_recording' && !buf) buf = buffers.get(`orchestral_harp:${midi}`);
+    if (!buf) return synthetic(midi, when, dur);
+    const src = ctx.createBufferSource(), gain = ctx.createGain();
+    sources.push(src);
+    src.buffer = buf;
+    const pack = packs[instrument];
+    const isLocal = pack || (instrument === 'local_recording' && localBuffers.has(k));
+    const isLegato = isLocal && event?.legato && event.legatoCount > 1;
+    const attack = isLocal ? (pack?.attack ?? 0.003) : 0.012;
+    const peak = isLegato ? (pack?.legatoPeak ?? 0.34) : (isLocal ? (pack?.peak ?? 0.45) : 0.42);
+    const stopAfter = isLocal ? buf.duration : Math.max(0.8, dur + 1.4);
+    const fadeStart = isLocal ? Math.max(attack, buf.duration - 0.08) : Math.max(0.55, dur + 1.2);
+    const offset = isLegato ? Math.min(0.035, event.legatoIndex * 0.006) : 0;
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.exponentialRampToValueAtTime(peak, when + attack);
+    gain.gain.setValueAtTime(peak, when + fadeStart);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + stopAfter);
+    src.connect(gain).connect(master);
+    src.start(when, offset);
+    src.stop(when + stopAfter + 0.02);
+  }
+
+  function light(keys, ms) {
+    keys.forEach(k => $('k-' + k)?.classList.add('on'));
+    setTimeout(() => keys.forEach(k => $('k-' + k)?.classList.remove('on')), ms);
+  }
+
+  function lineRange(line) {
+    const rows = scriptEl.value.split(/\r?\n/);
+    let start = 0;
+    for (let i = 0; i < line - 1; i++) start += rows[i].length + 1;
+    return [start, start + (rows[line - 1] || '').length];
+  }
+
+  function escapeHtml(text) {
+    const chars = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '"', "'": '&#39;' };
+    return String(text).replace(/[&<>"']/g, ch => chars[ch]);
+  }
+
+  function renderTracks(parsed) {
+    const threads = parsed.threads?.length ? parsed.threads : ['main'];
+    tracksEl.innerHTML = threads.map(name => {
+      const checked = disabledThreads.has(name) ? '' : 'checked';
+      const off = disabledThreads.has(name) ? ' off' : '';
+      return `<div class="track-group" data-thread-group="${escapeHtml(name)}">
+        <div class="thread-section">${escapeHtml(name)} · 等待播放</div>
+        <div class="track${off}" data-thread="${escapeHtml(name)}">
+          <div class="track-head"><strong>${escapeHtml(name)}</strong><label><input type="checkbox" data-thread-toggle="${escapeHtml(name)}" ${checked}>启用</label></div>
+          <div class="track-keys">—</div>
+          <div class="track-source">等待播放</div>
+        </div>
+      </div>`;
+    }).join('');
+    tracksEl.querySelectorAll('[data-thread-toggle]').forEach(input => {
+      input.onchange = () => {
+        const name = input.dataset.threadToggle;
+        if (input.checked) disabledThreads.delete(name); else disabledThreads.add(name);
+        renderTracks(parsed);
+      };
+    });
+  }
+
+  function updateTrack(e) {
+    const group = [...tracksEl.querySelectorAll('.track-group')].find(node => node.dataset.threadGroup === e.thread);
+    if (!group) return;
+    const track = group.querySelector('.track');
+    const section = group.querySelector('.thread-section');
+    const sourceText = sourceTextAt(e.line) || e.text;
+    const callText = e.callLine ? sourceTextAt(e.callLine) : '';
+    section.textContent = e.callLine ? `line ${e.callLine} · ${callText}` : `${e.thread} · 直接播放`;
+    track.classList.add('active');
+    track.querySelector('.track-keys').textContent = e.keys.join(' ');
+    track.querySelector('.track-source').textContent = `line ${e.line} · ${sourceText}`;
+    timers.push(setTimeout(() => track.classList.remove('active'), 180));
+  }
+
+  function sourceTextAt(line) {
+    return scriptEl.value.split(/\r?\n/)[line - 1] || '';
+  }
+
+  function showEvent(e, parsed) {
+    pauseAt = e.sec;
+    statusEl.textContent = `拍数 ${e.pos.toFixed(2)} / ${parsed.length.toFixed(2)}`;
+    updateTrack(e);
+    if (followEl.checked && (parsed.threads.length <= 1 || e.thread === 'main')) {
+      autoScroll = true;
+      scriptEl.scrollTop = Math.max(0, (e.line - 3) * 21);
+      requestAnimationFrame(() => autoScroll = false);
+    }
+    light(e.keys, 120);
+  }
+
+  function cursorLines() {
+    const beforeStart = scriptEl.value.slice(0, scriptEl.selectionStart).split(/\r?\n/).length;
+    const beforeEnd = scriptEl.value.slice(0, scriptEl.selectionEnd).split(/\r?\n/).length;
+    return [Math.min(beforeStart, beforeEnd), Math.max(beforeStart, beforeEnd)];
+  }
+
+  function eventFromCursor(parsed) {
+    const [startLine, endLine] = cursorLines();
+    const inRange = e => (e.callLine >= startLine && e.callLine <= endLine) || (e.line >= startLine && e.line <= endLine);
+    const afterRange = e => (e.callLine || e.line) >= startLine || e.line >= startLine;
+    return parsed.events.find(inRange) || parsed.events.find(afterRange) || parsed.events[0];
+  }
+
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; if (scheduler) clearInterval(scheduler); scheduler = 0; }
+  function clearSources() {
+    sources.forEach(o => {
+      try {
+        if (typeof o.pause === 'function') { o.pause(); o.currentTime = 0; }
+        else o.stop();
+      } catch {}
+    });
+    sources = [];
+  }
+  function releaseUi(reset = true) {
+    clearTimers();
+    playing = false; paused = false;
+    playBtn.textContent = '播放'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true; stopBtn.disabled = true;
+    if (reset) { pauseAt = 0; statusEl.textContent = '拍数 0 / 0'; }
+    document.querySelectorAll('.key.on').forEach(x => x.classList.remove('on'));
+  }
+
+  async function play(fromSec = 0, parsed = null) {
+    parsed ||= parse(scriptEl.value);
+    await ensureAudio();
+    stop(false);
+    renderTracks(parsed);
+    const preloadResult = await preload(parsed.events.filter(e => e.sec >= fromSec));
+    loadStatusEl.textContent = preloadResult.note || '';
+    errorsEl.textContent = [preloadResult.error, parsed.errors.join('\n')].filter(Boolean).join('\n');
+    playing = true; paused = false; pauseAt = fromSec;
+    playBtn.disabled = true; playCursorBtn.disabled = true; pauseBtn.disabled = false; stopBtn.disabled = false;
+
+    const queue = parsed.events.filter(e => e.sec >= fromSec);
+    const begin = ctx.currentTime + 0.08;
+    let index = 0;
+
+    const schedule = () => {
+      const horizon = ctx.currentTime + 2;
+      while (index < queue.length) {
+        const e = queue[index];
+        const when = begin + e.sec - fromSec;
+        if (when > horizon) break;
+        if (disabledThreads.has(e.thread)) { index++; continue; }
+        e.keys.forEach(k => hit(k, when, Math.min(e.beats * 60 / e.bpm * .85, .7), e));
+        timers.push(setTimeout(() => showEvent(e, parsed), Math.max(0, (when - ctx.currentTime) * 1000)));
+        index++;
+      }
+      if (index >= queue.length && ctx.currentTime > begin + parsed.seconds - fromSec + .4) releaseUi();
+    };
+
+    schedule();
+    scheduler = setInterval(schedule, 200);
+  }
+
+  function pause() {
+    if (!playing) return;
+    clearTimers(); clearSources();
+    playing = false; paused = true;
+    playBtn.textContent = '继续'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true;
+  }
+
+  function stop(reset = true) {
+    clearTimers(); clearSources();
+    playing = false; paused = false;
+    playBtn.textContent = '播放'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true; stopBtn.disabled = true;
+    if (reset) { pauseAt = 0; statusEl.textContent = '拍数 0 / 0'; }
+    document.querySelectorAll('.key.on').forEach(x => x.classList.remove('on'));
+  }
+
+  playBtn.onclick = () => play(paused ? pauseAt : 0);
+  playCursorBtn.onclick = () => {
+    const parsed = parse(scriptEl.value), e = eventFromCursor(parsed);
+    play(e?.sec || 0, parsed);
+  };
+  pauseBtn.onclick = pause;
+  stopBtn.onclick = () => stop();
+  $('volume').oninput = () => { if (master) master.gain.value = Number($('volume').value) * 0.45; };
+})();
+</script>
+</body>
+</html>
