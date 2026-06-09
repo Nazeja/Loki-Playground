@@ -41,6 +41,7 @@
     .track.active { border-color:var(--note); box-shadow:0 0 0 1px var(--note) inset; }
     .track-head { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#fff7d6; font-size:13px; margin-bottom:6px; }
     .track-head label { font-size:12px; color:#fff7d6; }
+    .track-meta { color:#d8d9ee; font-size:12px; margin:-2px 0 6px; }
     .track-keys { color:var(--note); font-size:24px; font-weight:800; letter-spacing:.12em; min-height:28px; }
     .track-source { color:#fff7d6; font-size:12px; white-space:pre-wrap; word-break:break-word; margin-top:4px; }
     @media (max-width: 850px) {
@@ -105,6 +106,7 @@
   const scriptEl = $('script'), playBtn = $('play'), playCursorBtn = $('playCursor'), pauseBtn = $('pause'), stopBtn = $('stop'), followEl = $('follow'), localSamplesEl = $('localSamples');
   const statusEl = $('status'), loadStatusEl = $('loadStatus'), errorsEl = $('errors'), keysEl = $('keys'), tracksEl = $('tracks');
   const order = 'ZXCVBNMASDFGHJQWERTYU'.split('');
+  const visualOrder = 'QWERTYUASDFGHJZXCVBNM'.split('');
   const semis = { Z:48,X:50,C:52,V:53,B:55,N:57,M:59, A:60,S:62,D:64,F:65,G:67,H:69,J:71, Q:72,W:74,E:76,R:77,T:79,Y:81,U:83 };
   const names = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
   const sampleRoot = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
@@ -118,7 +120,7 @@
   const disabledThreads = new Set();
   let ctx, master, timers = [], sources = [], scheduler = 0, pauseAt = 0, paused = false, playing = false, autoScroll = false;
 
-  keysEl.innerHTML = order.map(k => `<div class="key" id="k-${k}">${k}</div>`).join('');
+  keysEl.innerHTML = visualOrder.map(k => `<div class="key" id="k-${k}">${k}</div>`).join('');
   scriptEl.value = localStorage.nikkiPreviewScript || '';
   scriptEl.addEventListener('input', () => localStorage.nikkiPreviewScript = scriptEl.value);
   scriptEl.addEventListener('scroll', () => {
@@ -245,7 +247,7 @@
       const add = (keys, beats) => {
         if (keys.length) {
           if (out.length >= MAX_EVENTS) { addError(errs, `事件数超过 ${MAX_EVENTS}，已截断`); return false; }
-          out.push({ sec: state.sec, pos: state.pos, beats, keys, line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, thread });
+          out.push({ sec: state.sec, pos: state.pos, beats, keys, line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, beat: state.beat, delayText: state.defText, thread });
         }
         state.sec += beats * 60 / state.bpm;
         state.pos += beats;
@@ -254,7 +256,7 @@
       if (cmd.startsWith('instrument:')) continue;
       if (cmd === '$bpm') { state.bpm = Number(tokens[++i]) || state.bpm; continue; }
       if (cmd === '$beat') { state.beat = Number(tokens[++i]) || state.beat; continue; }
-      if (cmd === '$delay-common') { state.def = beatOf(tokens[++i], state.bpm) ?? state.def; continue; }
+      if (cmd === '$delay-common') { const raw = tokens[++i]; state.def = beatOf(raw, state.bpm) ?? state.def; state.defText = raw || state.defText; continue; }
       if (cmd === '$duration-common' || cmd === '$delay-before') { i++; continue; }
       if (cmd === '$legato') {
         const keys = (tokens[++i] || '').toUpperCase().replace(/[^A-Z_]/g, '').split('');
@@ -269,7 +271,7 @@
           const beats = dur * (weights[n] || 1) / total, secs = beats * 60 / state.bpm;
           if (k !== '_') {
             if (out.length >= MAX_EVENTS) { addError(errs, `事件数超过 ${MAX_EVENTS}，已截断`); return; }
-            out.push({ sec: state.sec + offsetSec, pos: state.pos + offsetBeat, beats, keys: [k], line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, thread, legato: true, legatoIndex: n, legatoCount: keys.filter(x => x !== '_').length });
+            out.push({ sec: state.sec + offsetSec, pos: state.pos + offsetBeat, beats, keys: [k], line: item.line, callLine: item.callLine, text: item.display || item.text, bpm: state.bpm, beat: state.beat, delayText: state.defText, thread, legato: true, legatoIndex: n, legatoCount: keys.filter(x => x !== '_').length });
           }
           offsetBeat += beats;
           offsetSec += secs;
@@ -300,7 +302,7 @@
     });
     threads.forEach(th => {
       if (out.length >= MAX_EVENTS) return;
-      const state = { bpm: globalBpm, beat: globalBeat, def: 0.5, pos: 0, sec: 0 };
+      const state = { bpm: globalBpm, beat: globalBeat, def: 0.5, defText: '$8', pos: 0, sec: 0 };
       for (const item of expandThread(th.items, errs)) {
         if (out.length >= MAX_EVENTS) break;
         parseLine(tokenize(item), item, state, out, errs, th.name);
@@ -516,15 +518,22 @@
     return String(text).replace(/[&<>"']/g, ch => chars[ch]);
   }
 
+  function contextText(e) {
+    if (!e) return 'BPM — · beat — · delay —';
+    return `BPM ${e.bpm} · beat ${e.beat} · delay ${e.delayText || '$8'}`;
+  }
+
   function renderTracks(parsed) {
     const threads = parsed.threads?.length ? parsed.threads : ['main'];
     tracksEl.innerHTML = threads.map(name => {
+      const first = parsed.events.find(e => e.thread === name);
       const checked = disabledThreads.has(name) ? '' : 'checked';
       const off = disabledThreads.has(name) ? ' off' : '';
       return `<div class="track-group" data-thread-group="${escapeHtml(name)}">
         <div class="thread-section">${escapeHtml(name)} · 等待播放</div>
         <div class="track${off}" data-thread="${escapeHtml(name)}">
           <div class="track-head"><strong>${escapeHtml(name)}</strong><label><input type="checkbox" data-thread-toggle="${escapeHtml(name)}" ${checked}>启用</label></div>
+          <div class="track-meta">${escapeHtml(contextText(first))}</div>
           <div class="track-keys">—</div>
           <div class="track-source">等待播放</div>
         </div>
@@ -548,6 +557,7 @@
     const callText = e.callLine ? sourceTextAt(e.callLine) : '';
     section.textContent = e.callLine ? `line ${e.callLine} · ${callText}` : `${e.thread} · 直接播放`;
     track.classList.add('active');
+    track.querySelector('.track-meta').textContent = contextText(e);
     track.querySelector('.track-keys').textContent = e.keys.join(' ');
     track.querySelector('.track-source').textContent = `line ${e.line} · ${sourceText}`;
     timers.push(setTimeout(() => track.classList.remove('active'), 180));
