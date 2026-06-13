@@ -23,7 +23,61 @@
     .status { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; }
     .wrap { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:12px; }
     .editor { display:flex; flex-direction:column; gap:10px; }
-    textarea { width:100%; height:70vh; min-height:460px; resize:none; border:0; outline:0; border-radius:18px; padding:16px; background:var(--editor); color:#fff7d6; font:14px/1.55 ui-rounded,"HarmonyOS Sans","Microsoft YaHei",system-ui,sans-serif; }
+    textarea, .backdrop {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      border: 1px solid var(--line);
+      outline: 0;
+      border-radius: 18px;
+      font: 14px/1.55 ui-rounded,"HarmonyOS Sans","Microsoft YaHei",system-ui,sans-serif;
+      box-sizing: border-box;
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    textarea {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: transparent;
+      color: #fff7d6;
+      caret-color: #fff;
+      z-index: 2;
+      padding: 16px;
+    }
+    .backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: var(--editor);
+      color: transparent;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+      padding: 16px 16px 16px 0; /* 左边不留 padding，给每行 div 留 */
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .backdrop::-webkit-scrollbar {
+      display: none;
+    }
+    .backdrop div {
+      padding-left: 16px;
+      min-height: 21.7px;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .backdrop .active-line-hl {
+      background: rgba(143, 167, 255, 0.12);
+      border-left: 4px solid var(--accent);
+      padding-left: 12px; /* 16px - 4px 边框 */
+    }
+    .backdrop .active-line-hl-accomp {
+      background: rgba(253, 230, 138, 0.08); /* 伴奏次级高亮，淡黄色 */
+      border-left: 4px solid var(--note);
+      padding-left: 12px;
+    }
     .load-status { margin:-4px 0 12px; padding:0 4px; color:var(--muted); font-size:13px; min-height:18px; }
     .side { padding:14px; height:70vh; min-height:460px; overflow:auto; }
     .errors { color:var(--bad); font-size:13px; white-space:pre-wrap; }
@@ -69,10 +123,9 @@
   </header>
 
   <section class="toolbar panel">
-    <button id="play" class="primary">播放</button>
+    <button id="play" class="primary">▶ 播放</button>
     <button id="playCursor">从光标播放</button>
-    <button id="pause" disabled>暂停</button>
-    <button id="stop" disabled>停止</button>
+    <button id="stop" disabled>⏹ 停止</button>
     <label>音色
       <select id="wave">
         <option value="pack_harp" selected>竖琴</option>
@@ -90,7 +143,10 @@
 
   <div class="wrap">
     <div class="editor">
-      <textarea id="script" spellcheck="false" placeholder="粘贴 InfinityNikkiAutoKey 脚本"></textarea>
+      <div class="textarea-wrapper" style="position:relative; width:100%; height:70vh; min-height:460px;">
+        <div id="backdrop" class="backdrop"></div>
+        <textarea id="script" spellcheck="false" placeholder="粘贴 InfinityNikkiAutoKey 脚本"></textarea>
+      </div>
     </div>
     <aside class="side panel">
       <div id="errors" class="errors"></div>
@@ -103,8 +159,10 @@
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const scriptEl = $('script'), playBtn = $('play'), playCursorBtn = $('playCursor'), pauseBtn = $('pause'), stopBtn = $('stop'), followEl = $('follow'), localSamplesEl = $('localSamples');
+  const scriptEl = $('script'), playBtn = $('play'), playCursorBtn = $('playCursor'), stopBtn = $('stop'), followEl = $('follow'), localSamplesEl = $('localSamples'), backdropEl = $('backdrop');
   const statusEl = $('status'), loadStatusEl = $('loadStatus'), errorsEl = $('errors'), keysEl = $('keys'), tracksEl = $('tracks');
+  const activeLinesByThread = new Map();
+  let lastUserScrollTime = 0;
   const order = 'ZXCVBNMASDFGHJQWERTYU'.split('');
   const visualOrder = 'QWERTYUASDFGHJZXCVBNM'.split('');
   const semis = { Z:48,X:50,C:52,V:53,B:55,N:57,M:59, A:60,S:62,D:64,F:65,G:67,H:69,J:71, Q:72,W:74,E:76,R:77,T:79,Y:81,U:83 };
@@ -122,11 +180,76 @@
 
   keysEl.innerHTML = visualOrder.map(k => `<div class="key" id="k-${k}">${k}</div>`).join('');
   scriptEl.value = localStorage.nikkiPreviewScript || '';
-  scriptEl.addEventListener('input', () => localStorage.nikkiPreviewScript = scriptEl.value);
+  rebuildBackdrop();
+  scriptEl.addEventListener('input', () => {
+    localStorage.nikkiPreviewScript = scriptEl.value;
+    rebuildBackdrop();
+  });
   scriptEl.addEventListener('scroll', () => {
-    if (playing && !autoScroll) followEl.checked = false;
+    backdropEl.scrollTop = scriptEl.scrollTop;
+    backdropEl.scrollLeft = scriptEl.scrollLeft;
+    if (!autoScroll) {
+      lastUserScrollTime = Date.now();
+    }
   });
   localSamplesEl.addEventListener('change', loadLocalSamples);
+
+  function syncBackdropPadding() {
+    const sbw = scriptEl.offsetWidth - scriptEl.clientWidth - 2;
+    backdropEl.style.paddingRight = (16 + Math.max(0, sbw)) + 'px';
+  }
+
+  window.addEventListener('resize', () => {
+    syncBackdropPadding();
+    backdropEl.scrollTop = scriptEl.scrollTop;
+    backdropEl.scrollLeft = scriptEl.scrollLeft;
+  });
+
+  function rebuildBackdrop() {
+    const text = scriptEl.value;
+    const lines = text.split(/\r?\n/);
+    const frag = document.createDocumentFragment();
+    lines.forEach((lineText, idx) => {
+      const div = document.createElement('div');
+      div.innerHTML = lineText === '' ? '&nbsp;' : escapeHtml(lineText);
+      if (playing) {
+        for (const [thread, lineNum] of activeLinesByThread) {
+          if (idx + 1 === lineNum) {
+            const className = (thread === 'main') ? 'active-line-hl' : 'active-line-hl-accomp';
+            div.classList.add(className);
+          }
+        }
+      }
+      frag.appendChild(div);
+    });
+    backdropEl.innerHTML = '';
+    backdropEl.appendChild(frag);
+    syncBackdropPadding();
+    backdropEl.scrollTop = scriptEl.scrollTop;
+    backdropEl.scrollLeft = scriptEl.scrollLeft;
+  }
+
+  function updateHighlighterPosition(newLine, thread) {
+    const children = backdropEl.children;
+    if (!playing || !newLine) {
+      const currentActive = backdropEl.querySelectorAll('.active-line-hl, .active-line-hl-accomp');
+      currentActive.forEach(el => el.classList.remove('active-line-hl', 'active-line-hl-accomp'));
+      activeLinesByThread.clear();
+      return;
+    }
+    if (!thread) thread = 'main';
+    const isMain = thread === 'main';
+    const className = isMain ? 'active-line-hl' : 'active-line-hl-accomp';
+    if (!children.length) return;
+    const prevLine = activeLinesByThread.get(thread);
+    if (prevLine && children[prevLine - 1]) {
+      children[prevLine - 1].classList.remove(className);
+    }
+    if (children[newLine - 1]) {
+      children[newLine - 1].classList.add(className);
+    }
+    activeLinesByThread.set(thread, newLine);
+  }
 
   function noteValue(raw) {
     const m = raw.match(/^(\d+)(\.*)$/);
@@ -548,6 +671,15 @@
     });
   }
 
+  function getNearestComment(line) {
+    const lines = scriptEl.value.split(String.fromCharCode(10));
+    for (let i = line - 1; i >= 0; i--) {
+      const l = (lines[i] || '').trim();
+      if (l.startsWith('#')) return l;
+    }
+    return '';
+  }
+
   function updateTrack(e) {
     const group = [...tracksEl.querySelectorAll('.track-group')].find(node => node.dataset.threadGroup === e.thread);
     if (!group) return;
@@ -559,7 +691,11 @@
     track.classList.add('active');
     track.querySelector('.track-meta').textContent = contextText(e);
     track.querySelector('.track-keys').textContent = e.keys.join(' ');
-    track.querySelector('.track-source').textContent = `line ${e.line} · ${sourceText}`;
+    
+    const comment = getNearestComment(e.line);
+    const commentPrefix = comment ? `${comment} · ` : '';
+    track.querySelector('.track-source').textContent = `${commentPrefix}line ${e.line} · ${sourceText}`;
+    
     timers.push(setTimeout(() => track.classList.remove('active'), 180));
   }
 
@@ -572,10 +708,17 @@
     statusEl.textContent = `拍数 ${e.pos.toFixed(2)} / ${parsed.length.toFixed(2)}`;
     updateTrack(e);
     if (followEl.checked && (parsed.threads.length <= 1 || e.thread === 'main')) {
-      autoScroll = true;
-      scriptEl.scrollTop = Math.max(0, (e.line - 3) * 21);
-      requestAnimationFrame(() => autoScroll = false);
+      if (Date.now() - lastUserScrollTime > 2500) {
+        autoScroll = true;
+        const lineNodes = backdropEl.children;
+        if (lineNodes && lineNodes[e.line - 1]) {
+          const targetTop = lineNodes[e.line - 1].offsetTop;
+          scriptEl.scrollTop = Math.max(0, targetTop - 65);
+        }
+        requestAnimationFrame(() => autoScroll = false);
+      }
     }
+    updateHighlighterPosition(e.line, e.thread);
     light(e.keys, 120);
   }
 
@@ -604,8 +747,8 @@
   }
   function releaseUi(reset = true) {
     clearTimers();
-    playing = false; paused = false;
-    playBtn.textContent = '播放'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true; stopBtn.disabled = true;
+    playing = false; paused = false; updateHighlighterPosition();
+    playBtn.textContent = '▶ 播放'; playBtn.disabled = false; playCursorBtn.disabled = false; stopBtn.disabled = true;
     if (reset) { pauseAt = 0; statusEl.textContent = '拍数 0 / 0'; }
     document.querySelectorAll('.key.on').forEach(x => x.classList.remove('on'));
   }
@@ -619,7 +762,7 @@
     loadStatusEl.textContent = preloadResult.note || '';
     errorsEl.textContent = [preloadResult.error, parsed.errors.join('\n')].filter(Boolean).join('\n');
     playing = true; paused = false; pauseAt = fromSec;
-    playBtn.disabled = true; playCursorBtn.disabled = true; pauseBtn.disabled = false; stopBtn.disabled = false;
+    playBtn.textContent = '⏸ 暂停'; playBtn.disabled = false; playCursorBtn.disabled = true; stopBtn.disabled = false;
 
     const queue = parsed.events.filter(e => e.sec >= fromSec);
     const begin = ctx.currentTime + 0.08;
@@ -647,24 +790,41 @@
     if (!playing) return;
     clearTimers(); clearSources();
     playing = false; paused = true;
-    playBtn.textContent = '继续'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true;
+    playBtn.textContent = '▶ 继续'; playBtn.disabled = false; playCursorBtn.disabled = false;
   }
 
   function stop(reset = true) {
     clearTimers(); clearSources();
-    playing = false; paused = false;
-    playBtn.textContent = '播放'; playBtn.disabled = false; playCursorBtn.disabled = false; pauseBtn.disabled = true; stopBtn.disabled = true;
+    playing = false; paused = false; updateHighlighterPosition();
+    playBtn.textContent = '▶ 播放'; playBtn.disabled = false; playCursorBtn.disabled = false; stopBtn.disabled = true;
     if (reset) { pauseAt = 0; statusEl.textContent = '拍数 0 / 0'; }
     document.querySelectorAll('.key.on').forEach(x => x.classList.remove('on'));
   }
 
-  playBtn.onclick = () => play(paused ? pauseAt : 0);
+  playBtn.onclick = () => {
+    if (playing) {
+      pause();
+    } else {
+      play(paused ? pauseAt : 0);
+    }
+  };
   playCursorBtn.onclick = () => {
     const parsed = parse(scriptEl.value), e = eventFromCursor(parsed);
     play(e?.sec || 0, parsed);
   };
-  pauseBtn.onclick = pause;
   stopBtn.onclick = () => stop();
+  
+  // 全局 Space 空格键快捷操控
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+      const active = document.activeElement;
+      if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+        return;
+      }
+      e.preventDefault();
+      playBtn.click();
+    }
+  });
   $('volume').oninput = () => { if (master) master.gain.value = Number($('volume').value) * 0.45; };
 })();
 </script>
